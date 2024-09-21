@@ -35,7 +35,11 @@
         </OperationConfiguration>
         
         <CheckedGeometry Enabled="False"/>
-        <FeedSwitchLevel Enabled="False"/>
+        <FeedSwitchLevel Enabled="True">
+            <ReferenceType DefaultValue="Percent">
+                <Percent Enabled="False"/>
+            </ReferenceType>    
+        </FeedSwitchLevel>
         <LinksPlaceHolder Enabled="False"/>
         <LeadsPlaceHolder Enabled="False"/>
         <Tolerances Enabled="False"/>

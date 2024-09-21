@@ -466,6 +466,78 @@ public class ExtensionToolPathCalculation : IST_Operation,
         return result;
     }
 
+    double GetToolDiameter()
+    {
+        if (opContainer.Tool is IST_MillTool mt)
+        {
+            return mt.Diameter;
+            Marshal.ReleaseComObject(mt);
+        }
+        return 1;
+    }
+
+    void OutToolpath(List<PunchPoint> punchPoints)
+    {
+        // Make toolpath movements from punch points
+        if (punchPoints.Count<1)
+            return;
+
+        var props = opContainer.XMLProp;
+
+        var safeLevel = punchPoints[0].LCS.vT.Z + props.Flt["SafeLevel.RelValue"];
+        if (props.Int["SafeLevel.ReferenceType"]==0)
+            safeLevel = props.Flt["SafeLevel.AbsValue"];
+
+        var feedLevel = punchPoints[0].LCS.vT.Z + props.Flt["FeedSwitchLevel.RelValue"];
+        if (props.Int["FeedSwitchLevel.ReferenceType"]==0)
+            feedLevel = props.Flt["FeedSwitchLevel.AbsValue"];
+        if (props.Int["FeedSwitchLevel.ReferenceType"]==3)
+            feedLevel = 0.01*GetToolDiameter()*props.Flt["FeedSwitchLevel.PercentValue"];
+        if (safeLevel<feedLevel)
+            safeLevel = feedLevel;
+
+        try
+        {
+
+
+            int pointIndex = 1;
+
+            foreach (var punchPoint in punchPoints)
+            {
+                clf.BeginItem(TST_CLDItemType.itGroup, "Point", $"Point {pointIndex++}");
+                // point above punch point on safe plane
+                var safePoint = punchPoint.LCS;
+                safePoint.vT.Z = safeLevel;
+
+                // point above punch point on feed switch plane
+                var feedPoint = punchPoint.LCS;
+                feedPoint.vT.Z = feedLevel;
+
+                clf.OutStandardFeed((int)TSTFeedTypeFlag.ffRapid);
+                clf.CutTo6d(safePoint);
+                
+                clf.OutStandardFeed((int)TSTFeedTypeFlag.ffPlunge);
+                clf.CutTo6d(feedPoint);
+                
+                clf.OutStandardFeed((int)TSTFeedTypeFlag.ffWorking);
+                clf.CutTo6d(punchPoint.LCS);
+                
+                // punch
+                clf.AddComment("punch");
+                
+                // go up
+                clf.OutStandardFeed((int)TSTFeedTypeFlag.ffReturn);
+                clf.CutTo6d(safePoint);
+
+                clf.EndItem();
+            }
+        }
+        finally
+        {
+            Marshal.ReleaseComObject(props);
+        }
+    }
+
     public void MakeWorkPath() {
         if (opContainer == null || clf == null)
             return;
@@ -490,28 +562,9 @@ public class ExtensionToolPathCalculation : IST_Operation,
         
         // in each point choose the most optimal rotation
         var optimizedPunchPoints = OptimizeRotation(optimizedPunchItems);
-        
-        // сделать траекторию
-        foreach (var punchPoint in optimizedPunchPoints)
-        {
-            // подойти к точке на высоте
-            var topPoint = punchPoint.LCS;
-            topPoint.vT.Z = 10;
-            
-            clf.OutStandardFeed((int)TSTFeedTypeFlag.ffRapid);
-            clf.CutTo6d(topPoint);
-            
-            // опуститься
-            clf.OutStandardFeed((int)TSTFeedTypeFlag.ffWorking);
-            clf.CutTo6d(punchPoint.LCS);
-            
-            // пробить
-            clf.AddComment("punch");
-            
-            // подняться
-            clf.OutStandardFeed((int)TSTFeedTypeFlag.ffReturn);
-            clf.CutTo6d(topPoint);
-        }
+
+        // Output toolpath
+        OutToolpath(optimizedPunchPoints);
     }
 
     public void MakeFill() {
