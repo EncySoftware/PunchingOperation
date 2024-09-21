@@ -24,9 +24,6 @@ public class ExtensionToolPathCalculation : IST_Operation,
     IExtension,
     IExtensionOperationSolver
 {
-    private string _logFileName = "";
-    private string _tempDir = "";
-
     /// <summary>
     /// Additional information about extension, provided in json file. It initializes in main CAM application
     /// </summary>
@@ -156,32 +153,6 @@ public class ExtensionToolPathCalculation : IST_Operation,
 
     }
 
-    private delegate void TMakeOneLayer(double currentZ);
-
-    private static readonly TST3DMatrix UnitMatrix = new()
-    {
-        vX = new TST3DPoint
-        {
-            X = 1, Y = 0, Z = 0
-        },
-        vY = new TST3DPoint
-        {
-            X = 0, Y = 1, Z = 0
-        },
-        vZ = new TST3DPoint
-        {
-            X = 0, Y = 0, Z = 1
-        },
-        vT = new TST3DPoint
-        {
-            X = 0, Y = 0, Z = 0
-        },
-        A = 0,
-        B = 0,
-        C = 0,
-        D = 1
-    };
-
     private PunchItems calcPunchItems(int numberMirroredParts)
     {
         if (opContainer == null)
@@ -222,28 +193,17 @@ public class ExtensionToolPathCalculation : IST_Operation,
     {
         // find center of curve
         var box = curve.Box;
-        var p1 = box.Min;
-        var p2 = box.Max;
-        var center = new TST3DPoint
-        {
-            X = (p1.X + p2.X) / 2,
-            Y = (p1.Y + p2.Y) / 2,
-            Z = (p1.Z + p2.Z) / 2
-        };
+        var center = 0.5 * ((T3DPoint)box.Min + box.Max);
 
         var sectorsCount = 5;
         
         // through all points in curve search 5 points, which are the farthest from the center
-        var points = new List<TST3DPoint>();
+        var points = new List<T3DPoint>();
         var distances = new Dictionary<int, double>();
         for (var i = 0; i < curve.QntP; i++)
         {
             var point = curve.KnotPoint[i];
-            var distance = Math.Sqrt(
-                Math.Pow(point.X - center.X, 2) +
-                Math.Pow(point.Y - center.Y, 2) +
-                Math.Pow(point.Z - center.Z, 2)
-            );
+            var distance = T3DPoint.Distance(center, point);
             distances.Add(i, distance);
         }
 
@@ -253,69 +213,25 @@ public class ExtensionToolPathCalculation : IST_Operation,
             var index = sortedDistances[i].Key;
             points.Add(curve.KnotPoint[index]);
         }
-        
+
         // find the center point relative to the most far points
-        var centerPoint = new TST3DPoint
-        {
-            X = 0,
-            Y = 0,
-            Z = 0
-        };
+        var centerPoint = T3DPoint.Zero;
         foreach (var point in points)
-        {
-            centerPoint.X += point.X;
-            centerPoint.Y += point.Y;
-            centerPoint.Z += point.Z;
-        }
-        centerPoint.X /= sectorsCount;
-        centerPoint.Y /= sectorsCount;
-        centerPoint.Z /= sectorsCount;
+            centerPoint += point;
+        centerPoint /= sectorsCount;
         
         // create punch item
         var result = new PunchItem();
         for (var i = 0; i < sectorsCount; i++)
         {
-            var point = points[i];
-            
-            var valueVX = new T3DPoint(point.X - centerPoint.X, point.Y - centerPoint.Y, point.Z - centerPoint.Z);
-            T3DPoint.TryNorm(ref valueVX); // TODO: if not return error throw new Exception("Error normalizing vector");
-            var valueVZ = new T3DPoint(0, 0, 1);
-            var valueVY = T3DPoint.VxV(valueVZ, valueVX);
-            
-            var punchPoint = new PunchPoint
+            var point = points[i];            
+            var punchPoint = new PunchPoint();
             {
-                LCS = new TST3DMatrix
-                {
-                    vX = new TST3DPoint
-                    {
-                        X = valueVX.X,
-                        Y = valueVX.Y,
-                        Z = valueVX.Z
-                    },
-                    vY = new TST3DPoint
-                    {
-                        X = valueVY.X,
-                        Y = valueVY.Y,
-                        Z = valueVY.Z
-                    },
-                    vZ = new TST3DPoint
-                    {
-                        X = valueVZ.X,
-                        Y = valueVZ.Y,
-                        Z = valueVZ.Z
-                    },
-                    
-                    vT = new TST3DPoint
-                    {
-                        X = centerPoint.X,
-                        Y = centerPoint.Y,
-                        Z = centerPoint.Z
-                    },
-                    A = 0,
-                    B = 0,
-                    C = 0,
-                    D = 1
-                }
+                punchPoint.LCS = new T3DMatrix(
+                    centerPoint, 
+                    T3DPoint.UnitZ, 
+                    T3DPoint.Norm(point - centerPoint)
+                );
             };
             result.Points.Add(punchPoint);
         }
@@ -344,18 +260,8 @@ public class ExtensionToolPathCalculation : IST_Operation,
         // fill points
         foreach (var punchItem in punchItems.Items)
         {
-            var punchPointFirst = punchItem.Points.First();
-            var point5d = new TST5DPoint
-            {
-                P = new TST3DPoint
-                {
-                    X = punchPointFirst.LCS.vT.X,
-                    Y = punchPointFirst.LCS.vT.Y,
-                    Z = punchPointFirst.LCS.vT.Z
-                },
-                n = punchPointFirst.LCS.vZ
-            };
-            var pointIndex = routeFinder.AddPoint5D(point5d);
+            var firstP = punchItem.Points.First().LCS;
+            var pointIndex = routeFinder.AddPoint5D(new T5DPoint(firstP.vT, firstP.vZ));
             getOptimalRouteCallback.AddItem(pointIndex, punchItem);
         }
         
@@ -364,28 +270,6 @@ public class ExtensionToolPathCalculation : IST_Operation,
         if (resultStatus.Code == TResultStatusCode.rsError)
             throw new Exception("Error getting optimal route: " + resultStatus.Description);
         return getOptimalRouteCallback.Result;
-    }
-
-    private static TST3DMatrix FromVML(T3DMatrix value)
-    {
-        var result = new TST3DMatrix();
-        result.vX.X = value.vX.X;
-        result.vX.Y = value.vX.Y;
-        result.vX.Z = value.vX.Z;
-        result.A = value.A;
-        result.vY.X = value.vY.X;
-        result.vY.Y = value.vY.Y;
-        result.vY.Z = value.vY.Z;
-        result.B = value.B;
-        result.vZ.X = value.vZ.X;
-        result.vZ.Y = value.vZ.Y;
-        result.vZ.Z = value.vZ.Z;
-        result.C = value.C;
-        result.vT.X = value.vT.X;
-        result.vT.Y = value.vT.Y;
-        result.vT.Z = value.vT.Z;
-        result.D = value.D;
-        return result;
     }
 
     private List<PunchPoint> OptimizeRotation(List<PunchItem> punchItems)
@@ -408,29 +292,16 @@ public class ExtensionToolPathCalculation : IST_Operation,
             if (resultStatus.Code == TResultStatusCode.rsError)
                 throw new Exception("Error initializing machine evaluator: " + resultStatus.Description);
 
-            var operationLcs = opContainer.LCS.ToVML();
+            T3DMatrix operationLcs = opContainer.LCS;
             foreach (var punchItem in punchItems)
             {
                 // find best rotation matrix
-                var punchPointFirst = punchItem.Points.First();
-                var punchPointLcs = punchPointFirst.LCS.ToVML();
-                var currentPoint = operationLcs.TransformMatrix(punchPointLcs);
-                var point = FromVML(currentPoint);
-                var point5d = new TST5DPoint
-                {
-                    P = new TST3DPoint
-                    {
-                        X = point.vT.X,
-                        Y = point.vT.Y,
-                        Z = point.vT.Z
-                    },
-                    n = point.vZ
-                };
+                var currentPoint = operationLcs.TransformMatrix(punchItem.Points.First().LCS);
+                var point5d = new T5DPoint(currentPoint.vT, currentPoint.vZ);
                 if (!machineEvaluator.CalcNextPos(point5d, false, false, false))
                     continue;
                 
-                var rotationMatrix = machineEvaluator.GetAbsoluteMatrix();
-                var bestRotationMatrix = operationLcs.GetLocalMatrix(rotationMatrix.ToVML());
+                var bestRotationMatrix = operationLcs.GetLocalMatrix(machineEvaluator.GetAbsoluteMatrix());
 
                 // find the rotation variant, we can reach, with the smallest distance to the current rotation
                 PunchPoint? bestPoint = null;
@@ -438,14 +309,12 @@ public class ExtensionToolPathCalculation : IST_Operation,
                 foreach (var punchPoint in punchItem.Points)
                 {
                     // check we can reach
-                    punchPointLcs = punchPoint.LCS.ToVML();
-                    currentPoint = operationLcs.TransformMatrix(punchPointLcs);
-                    point = FromVML(currentPoint);
-                    if (!machineEvaluator.CalcNextPos6d(point, false, false))
+                    currentPoint = operationLcs.TransformMatrix(punchPoint.LCS);
+                    if (!machineEvaluator.CalcNextPos6d(currentPoint, false, false))
                         continue;
                     
                     // save if the angle is the smallest
-                    var curAngle = VML.CalcVecsAngle(bestRotationMatrix.vX, punchPoint.LCS.ToVML().vX);
+                    var curAngle = VML.CalcVecsAngle(bestRotationMatrix.vX, punchPoint.LCS.vX);
                     if (curAngle >= smallestAngle)
                         continue;
                     smallestAngle = curAngle;
