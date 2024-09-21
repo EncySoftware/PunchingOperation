@@ -36,7 +36,7 @@
         
         <CheckedGeometry Enabled="False"/>
         <FeedSwitchLevel Enabled="True">
-            <ReferenceType DefaultValue="Percent">
+            <ReferenceType DefaultValue="PercentDTool">
                 <Percent Enabled="False"/>
             </ReferenceType>    
         </FeedSwitchLevel>
@@ -99,6 +99,8 @@
             <SimulationType DefaultValue="Painting"/>
         </Simulation>
 
+        <SCType ID="OptimizeOrder" Caption="Optimize order" type="Boolean" DefaultValue="True"/>
+
         <SCType ID="Punching" Caption="Punch pattern" type="ComplexType"
                 Compact="True"
                 ImageFile="$(SUPPLEMENT_FOLDER)\operations\TypeImages\CornerRetraction.bmp"
@@ -113,7 +115,7 @@
                     Visible="[Pattern] = [Pattern.Star]"/>
             <SCType ID="SymmetryAngles" Caption="Symmetry angles" type="String" DefaultValue="0;60;120"
                     Visible="[Pattern] = [Pattern.Custom]"/>
-            <SCType ID="StartAngle" Caption="Start angle offset" type="Double" DefaultValue="0"
+            <SCType ID="StartAngleOffset" Caption="Start angle offset" type="Double" DefaultValue="0"
                     Visible="[Pattern] != [Pattern.Round]"    
                     DimensionKind="Angular"/>
         </SCType>

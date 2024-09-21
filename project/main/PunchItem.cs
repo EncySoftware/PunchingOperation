@@ -11,6 +11,11 @@ public struct PunchItem
     public readonly HashSet<PunchPoint> Points = [];
 
     /// <summary>
+    /// The most optimal point from Points
+    /// </summary>
+    public PunchPoint? OptimalPoint = null;
+
+    /// <summary>
     /// Point to be punched in tool path. It has many points. All points have the same center, but they are rotated
     /// </summary>
     public PunchItem()
