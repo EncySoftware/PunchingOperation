@@ -1,4 +1,4 @@
-﻿namespace ExtensionUtilityToolPathCalculationNet;
+﻿namespace PunchingOperationExtension;
 
 /// <summary>
 /// Array of <see cref="PunchItem"/>

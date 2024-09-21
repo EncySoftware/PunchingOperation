@@ -1,6 +1,6 @@
 ﻿using STTypes;
 
-namespace ExtensionUtilityToolPathCalculationNet;
+namespace PunchingOperationExtension;
 
 /// <summary>
 /// Point to be punched in tool path

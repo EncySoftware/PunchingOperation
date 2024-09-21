@@ -1,4 +1,4 @@
-﻿namespace ExtensionUtilityToolPathCalculationNet;
+﻿namespace PunchingOperationExtension;
 
 /// <summary>
 /// Point to be punched in tool path. It has many points. All points have the same center, but they are rotated

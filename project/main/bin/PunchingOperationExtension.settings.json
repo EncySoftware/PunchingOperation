@@ -1,13 +1,13 @@
 {
-    "name": "Extension to calculate tool path by C#",
-    "description": "Extension to calculate tool path by C#",
-    "module_path": "${extensionJsonFolder}/ExtensionUtilityToolPathCalculationNet.dll",
+    "name": "Punching operation extensions",
+    "description": "Extensions to calculate tool path for punching",
+    "module_path": "${extensionJsonFolder}/PunchingOperationExtension.dll",
     "extensions": [
         {
             "OperationSolver": {
-                "name": "Calculate tool path by C#",
-                "caption": "Calculate tool path by C#",
-                "id": "Extension.OperationSolver.ToolPathCalculation.Net"
+                "name": "Punching operation extension",
+                "caption": "Extensions to calculate tool path for punching",
+                "id": "PunchingOperationExtension.ToolPathCalculation"
             }
         }
     ]

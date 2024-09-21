@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <NoWarn>NETSDK1138;1591</NoWarn>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -25,7 +26,6 @@
   <ItemGroup>
     <Reference Include="$(CAMPath)\STMeshTypes.dll" />
     <Reference Include="$(CAMPath)\STCurveTypes.dll" />
-    <Reference Include="$(CAMPath)\VecMatrLib.dll" />
     <Reference Include="$(CAMPath)\STTypes.dll" />
     <Reference Include="$(CAMPath)\STLibraryTypes.dll" />
     <Reference Include="$(CAMPath)\STXMLPropTypes.dll" />

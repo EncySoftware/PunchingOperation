@@ -1,7 +1,7 @@
 ﻿using STModelFormerTypes;
 using STXMLPropTypes;
 
-namespace ExtensionUtilityToolPathCalculationNet;
+namespace PunchingOperationExtension;
 
 public class ModelFormerItems : IST_ModelFormerSupportedItems
 {

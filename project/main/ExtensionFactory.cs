@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using System.Xml;
-using ExtensionUtilityToolPathCalculationNet;
+using PunchingOperationExtension;
 
 // ReSharper disable once CheckNamespace
 namespace CAMAPI;
@@ -28,7 +28,7 @@ public class ExtensionFactory : IExtensionFactory
         try
         {
             ret = default;
-            if (extensionIdent == "Extension.OperationSolver.ToolPathCalculation.Net")
+            if (extensionIdent == "PunchingOperationExtension.ToolPathCalculation")
                 return new ExtensionToolPathCalculation();
             throw new Exception("Unknown extension identifier: " + extensionIdent);
         }

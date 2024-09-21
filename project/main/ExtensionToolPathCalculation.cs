@@ -14,7 +14,7 @@ using STModelFormerTypes;
 using STOperationTypes;
 using STTypes;
 
-namespace ExtensionUtilityToolPathCalculationNet;
+namespace PunchingOperationExtension;
 
 /// <summary>
 /// Extension for exampling - how to calculate tool path
@@ -427,18 +427,20 @@ public class ExtensionToolPathCalculation : IST_Operation,
                 if (!machineEvaluator.CalcNextPos(point5d, false, false, false))
                     continue;
                 
+                result.Add(punchPointFirst);
+                
                 var rotationMatrix = machineEvaluator.GetAbsoluteMatrix();
                 var bestRotationMatrix = operationLcs.GetLocalMatrix(rotationMatrix.ToVML());
 
                 // find the rotation variant, we can reach, with the smallest distance to the current rotation
-                var rotationAngles = new Dictionary<>()
-                foreach (var punchPoint in punchItem.Points)
-                {
-                    var curAngle = VML.CalcVecsAngle(bestRotationMatrix.vX, punchPoint.LCS.ToVML().vX);
-                    if (curAngle >= smallestAngle)
-                        continue;
+                // var rotationAngles = new Dictionary<>();
+                // foreach (var punchPoint in punchItem.Points)
+                // {
+                //     var curAngle = VML.CalcVecsAngle(bestRotationMatrix.vX, punchPoint.LCS.ToVML().vX);
+                //     if (curAngle >= smallestAngle)
+                //         continue;
                     
-                }
+                // }
                 
 
 

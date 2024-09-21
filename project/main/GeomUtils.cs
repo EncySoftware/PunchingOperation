@@ -1,7 +1,7 @@
 ﻿using Geometry.VecMatrLib;
 using STTypes;
 
-namespace ExtensionUtilityToolPathCalculationNet;
+namespace PunchingOperationExtension;
 
 public static class GeomUtils
 {
