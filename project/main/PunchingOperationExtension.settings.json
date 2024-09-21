@@ -1,0 +1,14 @@
+{
+    "name": "Extension to calculate tool path by C#",
+    "description": "Extension to calculate tool path by C#",
+    "module_path": "${extensionJsonFolder}/ExtensionUtilityToolPathCalculationNet.dll",
+    "extensions": [
+        {
+            "OperationSolver": {
+                "name": "Calculate tool path by C#",
+                "caption": "Calculate tool path by C#",
+                "id": "Extension.OperationSolver.ToolPathCalculation.Net"
+            }
+        }
+    ]
+}
