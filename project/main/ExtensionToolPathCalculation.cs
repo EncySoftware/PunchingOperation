@@ -433,78 +433,24 @@ public class ExtensionToolPathCalculation : IST_Operation,
                 var bestRotationMatrix = operationLcs.GetLocalMatrix(rotationMatrix.ToVML());
 
                 // find the rotation variant, we can reach, with the smallest distance to the current rotation
-                // var rotationAngles = new Dictionary<>();
-                // foreach (var punchPoint in punchItem.Points)
-                // {
-                //     var curAngle = VML.CalcVecsAngle(bestRotationMatrix.vX, punchPoint.LCS.ToVML().vX);
-                //     if (curAngle >= smallestAngle)
-                //         continue;
+                PunchPoint? bestPoint = null;
+                var smallestAngle = double.MaxValue;
+                foreach (var punchPoint in punchItem.Points)
+                {
+                    // check we can reach
+                    punchPointLcs = punchPoint.LCS.ToVML();
+                    currentPoint = operationLcs.TransformMatrix(punchPointLcs);
+                    point = FromVML(currentPoint);
+                    if (!machineEvaluator.CalcNextPos6d(point, false, false))
+                        continue;
                     
-                // }
-                
-
-
-
-
-
-
-
-                // find the first rotation we can reach
-                // PunchPoint startPoint;
-                // foreach (var punchPoint in punchItem.Points)
-                // {
-                //     var punchPointLcs = punchPoint.LCS.ToVML();
-                //     var currentPoint = operationLcs.TransformMatrix(punchPointLcs);
-                //     var point = FromVML(currentPoint);
-                //     if (!machineEvaluator.CalcNextPos(point, false, false, true))
-                //         continue;
-                //     
-                //     startPoint = punchPoint;
-                //     break;
-                // }
-                // if (startPoint == null)
-                //     continue;
-
-
-                // var punchPointFirst = punchItem.Points.First();
-                // var punchPointLcs = punchPointFirst.LCS.ToVML();
-                // var currentPoint = operationLcs.TransformMatrix(punchPointLcs);
-                // var point = FromVML(currentPoint);
-
-                // var currentPoint = T3DPoint.VxV() machineEvaluator.NCToGeom(punchPointFirst.LCS);
-                // var point5d = new TST5DPoint
-                // {
-                //     P = new TST3DPoint
-                //     {
-                //         X = currentPoint.vT.X,
-                //         Y = currentPoint.vT.Y,
-                //         Z = currentPoint.vT.Z
-                //     },
-                //     n = currentPoint.vZ
-                // };
-                // if (!machineEvaluator.CalcNextPos6d(point, false, false))
-                //     continue;
-                // machineEvaluator.SetNextPos(true);
-                // var rotationMatrix = machineEvaluator.GetAbsoluteMatrix();
-                // var currentRotationMatrix = machineEvaluator.GeomToNC(rotationMatrix);
-
-                // find the rotation variant with the smallest distance to the current rotation
-                // var bestPoint = punchPointFirst;
-                // var bestDistance = double.MaxValue;
-                // foreach (var punchPoint in punchItem.Points)
-                // {
-                //     var distance = 0.0;
-                //     distance += Math.Pow(Math.Abs(punchPoint.LCS.vX.X - currentRotationMatrix.vX.X), 2);
-                //     distance += Math.Pow(Math.Abs(punchPoint.LCS.vY.Y - currentRotationMatrix.vY.Y), 2);
-                //     distance += Math.Pow(Math.Abs(punchPoint.LCS.vZ.Z - currentRotationMatrix.vZ.Z), 2);
-                //     distance = Math.Sqrt(distance);
-                //     if (distance >= bestDistance)
-                //         continue;
-                //     
-                //     bestDistance = distance;
-                //     bestPoint = punchPoint;
-                // }
-                // result.Add(bestPoint);
+                    // save if the angle is the smallest
+                    var curAngle = VML.CalcVecsAngle(bestRotationMatrix.vX, punchPoint.LCS.ToVML().vX);
+                    if (curAngle >= smallestAngle)
+                        continue;
+                    smallestAngle = curAngle;
+                    bestPoint = punchPoint;
+                }
             }
         }
         finally
