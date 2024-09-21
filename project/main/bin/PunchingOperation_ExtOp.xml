@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<SCCollection>
+
+    <SCNameSpace ID="OperationRegistrator">
+        <SCType ID="RegTPunchOP" type="TRegisterOperationRecord" Enabled="True">
+            <TypeName DefaultValue="TPunchOP"/>
+        </SCType>
+    </SCNameSpace>
+
+    <SCType ID="TPunchOP" Caption="Punching" type="TSTMillOp" Enabled = "True">
+        <GUID DefaultValue="{D765C8F9-9763-4F9F-81E3-3EA0CCC684F1}"/>
+        <ContainerID DefaultValue="{43B41AA1-9ECB-4A0A-B3B6-AC49AB672899}"/>
+        <SolverID DefaultValue="PunchingOperationExtension.ToolPathCalculation"/>
+
+        <!-- Header -->
+        <Name DefaultValue="Punching"/>
+        <Comment DefaultValue="Punching"/>
+        <Image DefaultValue="$(SUPPLEMENT_FOLDER)\operations\MillOperations\Images\Knife5D.bmp"/>
+        <Icon DefaultValue="$(SUPPLEMENT_FOLDER)\operations\MillOperations\Images\Knife5DIcon.bmp"/>
+        <Video DefaultValue="$(SUPPLEMENT_FOLDER)\operations\MillOperations\Video\Knife5D.wmv"/>
+        <OperationGroup DefaultValue="Mill"/>
+        <MultiGroup>
+            <SCType ID="Spray" OrderInGroup="10" type="TLinkToParentMultiGroup"/>
+        </MultiGroup>
+        <RestMode DefaultValue="Off"/>
+        <OperationConfiguration>
+            <Conf_Free DefaultValue="True"/>
+            <Conf_2D DefaultValue="True"/>
+            <Conf_25D DefaultValue="True"/>
+            <Conf_3D DefaultValue="True"/>
+            <Conf_3AD DefaultValue="True"/>
+            <Conf_MW DefaultValue="True"/>
+            <Conf_4D DefaultValue="True"/>
+            <Conf_5D DefaultValue="True"/>
+        </OperationConfiguration>
+        
+        <CheckedGeometry Enabled="False"/>
+        <FeedSwitchLevel Enabled="False"/>
+        <LinksPlaceHolder Enabled="False"/>
+        <LeadsPlaceHolder Enabled="False"/>
+        <Tolerances Enabled="False"/>
+        <Stock Enabled="False"/>
+
+        <CustomizedMachiningApplications>
+            <SupportedApplications>
+                <MillTool DefaultValue="true"/>
+                <LatheCutter DefaultValue="false"/>
+                <JetCutter DefaultValue="false"/>
+                <Punch DefaultValue="true"/>
+                <Wire DefaultValue="false"/>
+                <Cutter6D DefaultValue="true"/>
+                <Welder DefaultValue="false"/>
+                <AdditiveTool DefaultValue="false"/>
+                <HeatTreatment DefaultValue="false"/>
+                <Painter DefaultValue="true"/>
+            </SupportedApplications>
+        </CustomizedMachiningApplications>
+
+        <ConditionsSection>
+            <!-- <Feeds Transparent="NOT [UseMWFeeds]" Visible="NOT [UseMWFeeds]">
+                <ReturnFeed>
+                    <SCType ID="RapidReturn" Caption="Return on the rapid feed" type="Boolean" DefaultValue="False"/>
+                </ReturnFeed>
+            </Feeds> -->
+        </ConditionsSection>
+
+        <ToolSection>
+            <SupportedToolTypes>
+                <EndMill Enabled="True"/>
+                <Spherical Enabled="True"/>
+                <Torus Enabled="True"/>
+                <DblRadius Enabled="True"/>
+                <TrimDblRadius Enabled="True"/>
+                <Angle Enabled="True"/>
+                <TrimAngle Enabled="True"/>
+                <Grooving Enabled="True"/>
+                <Drill Enabled="False"/>
+                <Complex Enabled="False"/>
+                <NegativeRad Enabled="True"/>
+                <Cutter Enabled="False"/>
+                <Tap Enabled="False"/>
+                <CenterDrill Enabled="False"/>
+                <CounterSink Enabled="False"/>
+                <CounterBore Enabled="False"/>
+                <Reamer Enabled="False"/>
+                <ThreadMill Enabled="False"/>
+                <CustomMill Enabled="True"/>
+                <UndercutTool Enabled="True"/>
+                <KnifeTool Enabled="true"/>
+                <Spray Enabled="True"/>
+            </SupportedToolTypes>
+        </ToolSection>
+
+        <Simulation>
+            <SimulationType DefaultValue="Painting"/>
+        </Simulation>
+
+        <SCType ID="Punching" Caption="Punch pattern" type="ComplexType"
+                Compact="True"
+                ImageFile="$(SUPPLEMENT_FOLDER)\operations\TypeImages\CornerRetraction.bmp"
+                >
+            <SCType ID="Pattern" Caption="Punch pattern" type="Enumerated" DefaultValue="Round">
+                <SCType ID="Round" Caption="Round" type="None"/>
+                <SCType ID="Rectangle" Caption="Rectangle" type="None"/>
+                <SCType ID="Star" Caption="Star" type="None"/>
+                <SCType ID="Custom" Caption="Custom" type="None"/>
+            </SCType>
+            <SCType ID="RayCount" Caption="Ray count" type="Integer" DefaultValue="5"
+                    Visible="[Pattern] = [Pattern.Star]"/>
+            <SCType ID="SymmetryAngles" Caption="Symmetry angles" type="String" DefaultValue="0;60;120"
+                    Visible="[Pattern] = [Pattern.Custom]"/>
+            <SCType ID="StartAngle" Caption="Start angle offset" type="Double" DefaultValue="0"
+                    Visible="[Pattern] != [Pattern.Round]"    
+                    DimensionKind="Angular"/>
+        </SCType>
+
+        <SCType ID="AxesBrakeUsingMode" Caption="Axes brakes using mode" type="Enumerated" DefaultValue="DoNotUse" Visible="False">
+            <SCType ID="DoNotUse" Caption="Do not use brakes" type="None"/>
+            <SCType ID="Always" Caption="Use brakes" type="None"/>
+        </SCType>
+    </SCType>
+
+</SCCollection>
