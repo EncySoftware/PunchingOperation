@@ -325,6 +325,8 @@ public class ExtensionToolPathCalculation : IST_Operation,
 
     private List<PunchItem> OptimizePath(PunchItems punchItems)
     {
+        if (punchItems.Items.Count<1)
+            return new List<PunchItem>();
         // get optimal route finder
         var info = Info
                    ?? throw new Exception("Extension info is not initialized");
@@ -427,8 +429,6 @@ public class ExtensionToolPathCalculation : IST_Operation,
                 if (!machineEvaluator.CalcNextPos(point5d, false, false, false))
                     continue;
                 
-                result.Add(punchPointFirst);
-                
                 var rotationMatrix = machineEvaluator.GetAbsoluteMatrix();
                 var bestRotationMatrix = operationLcs.GetLocalMatrix(rotationMatrix.ToVML());
 
@@ -451,6 +451,8 @@ public class ExtensionToolPathCalculation : IST_Operation,
                     smallestAngle = curAngle;
                     bestPoint = punchPoint;
                 }
+                if (bestPoint != null)
+                    result.Add((PunchPoint)bestPoint);
             }
         }
         finally
