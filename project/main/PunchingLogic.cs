@@ -359,7 +359,7 @@ public partial class ExtensionToolPathCalculation : IST_Operation,
                     {
                         globalPoint = operationLcs.TransformMatrix(punchItem.OptimalPoint.Value.LCS);
                         machineEvaluator.CalcNextPos6d(globalPoint, false, false);
-                        // machineEvaluator.SetNextPos(false);
+                        machineEvaluator.SetNextPos(false);
                         punchItems.SetOrderedItem(i, punchItem);
                     }
                 }
@@ -425,7 +425,7 @@ public partial class ExtensionToolPathCalculation : IST_Operation,
                 var feedPoint = punchPoint.LCS;
                 feedPoint.vT.Z = feedLevel;
 
-                clf.OutStandardFeed((int)TSTFeedTypeFlag.ffRapid);
+                clf.OutStandardFeed((int)TSTFeedTypeFlag.ffRapid5D);
                 if (punchItems.Pattern.Is5D)
                     clf.CutTo5d(safePoint.vT, safePoint.vZ);
                 else
