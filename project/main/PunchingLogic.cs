@@ -283,6 +283,7 @@ public partial class ExtensionToolPathCalculation : IST_Operation,
             if (resultStatus.Code == TResultStatusCode.rsError)
                 throw new Exception("Error getting ToolPathOptimization extension: " + resultStatus.Description);
             var routeFinder = (ICamApiRouteVoyager)extension;
+            routeFinder.GroupByPlanes = true;
 
             // fill points
             foreach (var punchItem in punchItems.Items)
