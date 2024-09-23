@@ -73,7 +73,7 @@ public class ExtensionFactory : IExtensionFactory
     public void OnLibraryRegistered(IExtensionFactoryContext Context, out TResultStatus ret)
     {
         string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-        string OperationXMlName = "SimpleToolPathGenerator_ExtOp.xml";
+        string OperationXMlName = "PunchingOperation_ExtOp.xml";
         string pathToOperationXML = Path.GetDirectoryName(assemblyLocation) + "\\" + OperationXMlName;
         string pathToUserOperationsList = Context.Paths.TryUnfoldPath(@"$(OPERATIONS_FOLDER)\UserOperationsList.xml");
         if (File.Exists(pathToUserOperationsList))
