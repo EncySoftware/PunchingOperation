@@ -54,16 +54,17 @@ public partial class ExtensionToolPathCalculation : IST_Operation,
     }
 
     public void InitModelFormers() {
-        var supportedItems = new ModelFormerItems();
-        var interfaceType = typeof(IST_CurvesArrayModelItem);
-        var guidAttr = (GuidAttribute)Attribute.GetCustomAttribute(interfaceType, typeof(GuidAttribute));
-        supportedItems.AddItem("Curve", new Guid(guidAttr.Value), "", "Curve", "", "", false, null);
         
         var jobAssignment = opContainer.MFJobAssignment;
         try
         {
-            jobAssignment.SupportedItems = supportedItems;
-            jobAssignment.FillItemsBySupportedItems();
+            if (jobAssignment.SupportedItems == null)
+            {
+                var supportedItems = new ModelFormerItems();
+                supportedItems.AddItem("Curve", InterfaceHelper<IST_CurvesArrayModelItem>.IID, "", "Curve", "", "", false, null);
+                jobAssignment.SupportedItems = supportedItems;
+                jobAssignment.FillItemsBySupportedItems();
+            }
         }
         finally
         {
