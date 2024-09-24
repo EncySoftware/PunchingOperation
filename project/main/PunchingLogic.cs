@@ -330,36 +330,44 @@ public partial class ExtensionToolPathCalculation : IST_Operation,
                 var firstPoint = punchItem.Points.First();
                 var globalPoint = operationLcs.TransformMatrix(firstPoint.LCS);
                 var point5d = new T5DPoint(globalPoint.vT, globalPoint.vZ);
-                if (!machineEvaluator.CalcNextPos(point5d, false, false, false))
+                if (!machineEvaluator.CalcNextPos5D(point5d, false, false, false))
                     continue;
+                machineEvaluator.SetNextPos(false);
 
                 if (punchItems.Pattern.Is5D) {
                     punchItem.OptimalPoint = firstPoint;
-                    machineEvaluator.SetNextPos(false);
                     punchItems.SetOrderedItem(i, punchItem);
                 } else
                 {
                     // find the rotation variant, we can reach, with the smallest distance to the current rotation
-                    var bestRotationMatrix = operationLcs.GetLocalMatrix(machineEvaluator.GetAbsoluteMatrix());
+                    // var bestRotationMatrix = operationLcs.GetLocalMatrix(machineEvaluator.GetAbsoluteMatrix());
+                    var bestRotationMatrix = machineEvaluator.GetAbsoluteMatrix();
                     var smallestAngle = double.MaxValue;
                     foreach (var punchPoint in punchItem.Points)
                     {
                         // check we can reach
                         globalPoint = operationLcs.TransformMatrix(punchPoint.LCS);
-                        if (!machineEvaluator.CalcNextPos6d(globalPoint, false, false))
+                        if (!machineEvaluator.CalcNextPos6D(globalPoint, false, false))
                             continue;
+                        machineEvaluator.SetNextPos(false);
+                        var rotationMatrix = machineEvaluator.GetAbsoluteMatrix();
 
                         // save if the angle is the smallest
-                        var curAngle = VML.CalcVecsAngle(bestRotationMatrix.vX, punchPoint.LCS.vX);
-                        if (curAngle >= smallestAngle)
-                            continue;
-                        smallestAngle = curAngle;
-                        punchItem.OptimalPoint = punchPoint;
+                        // var curAngle = VML.CalcVecsAngle(bestRotationMatrix.vX, punchPoint.LCS.vX);
+                        var curAngle = VML.CalcVecsAngle(bestRotationMatrix.vX, rotationMatrix.vX);
+                        if (curAngle < smallestAngle) {
+                            smallestAngle = curAngle;
+                            punchItem.OptimalPoint = punchPoint;
+                        }
+
+                        // return initial state for the next iteration
+                        machineEvaluator.CalcNextPos5D(point5d, false, false, false);
+                        machineEvaluator.SetNextPos(false);
                     }
                     if (punchItem.OptimalPoint != null)
                     {
                         globalPoint = operationLcs.TransformMatrix(punchItem.OptimalPoint.Value.LCS);
-                        machineEvaluator.CalcNextPos6d(globalPoint, false, false);
+                        machineEvaluator.CalcNextPos6D(globalPoint, false, false);
                         machineEvaluator.SetNextPos(false);
                         punchItems.SetOrderedItem(i, punchItem);
                     }
