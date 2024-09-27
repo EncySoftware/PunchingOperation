@@ -128,20 +128,31 @@ public class Build : NukeBuild
         {
             _buildSpace.Projects.Compile(Variant, true);
 
-            // copy settings file, if we want to debug
+            // copy xml and settings files, if we want to debug
             foreach (var project in _buildSpace.Projects)
             {
                 var mainProjectFilePath = project.MainFilePath;
                 if (mainProjectFilePath == null)
                     continue;
-
+                var mainProjectFolder = Path.GetDirectoryName(mainProjectFilePath)
+                                        ?? throw new Exception("Parent folder of main project file path is null");
                 var dllPath = project.GetBuildResultPath(Variant, "dll")
                               ?? throw new Exception("Build results with dll type not found");
+                var dllFolder = Path.GetDirectoryName(dllPath)
+                                ?? throw new Exception("Parent folder of dll path is null");
+                
+                // copy settings file
                 var jsonPath = Path.ChangeExtension(mainProjectFilePath, ".settings.json");
                 if (!File.Exists(jsonPath))
                     throw new Exception("Settings file not found");
-
                 File.Copy(jsonPath, Path.ChangeExtension(dllPath, ".settings.json"), true);
+                
+                // copy xml file
+                var sourceXmlPath = Path.Combine(mainProjectFolder, "PunchingOperation_ExtOp.xml");
+                if (!File.Exists(sourceXmlPath))
+                    throw new Exception($"{sourceXmlPath} file not found");
+                var targetXmlPath = Path.Combine(dllFolder, "PunchingOperation_ExtOp.xml");
+                File.Copy(sourceXmlPath, targetXmlPath, true);
             }
         });
 
@@ -168,9 +179,14 @@ public class Build : NukeBuild
                 // path to dll (to be included into dext)
                 var dllPath = project.GetBuildResultPath(Variant, "dll")
                               ?? throw new Exception("Build results with dll type not found");
+                var dllFolder = Path.GetDirectoryName(dllPath)
+                                ?? throw new Exception("Parent folder of dll path is null");
 
                 // path to json, describing extension (to be included into dext)
                 var jsonPath = Path.ChangeExtension(dllPath, ".settings.json");
+                
+                // additional files
+                var xmlOperation = Path.Combine(dllFolder, "PunchingOperation_ExtOp.xml");
 
                 // make new dext
                 var outputFolder = Path.GetDirectoryName(dllPath)
@@ -183,6 +199,7 @@ public class Build : NukeBuild
                 using var archive = new ZipArchive(zipToOpen, ZipArchiveMode.Update);
                 archive.CreateEntryFromFile(dllPath, Path.GetFileName(dllPath));
                 archive.CreateEntryFromFile(jsonPath, Path.GetFileName(jsonPath));
+                archive.CreateEntryFromFile(xmlOperation, Path.GetFileName(xmlOperation));
                 _logger.head($"Created dext file: {dextPath}");
             }
         });
