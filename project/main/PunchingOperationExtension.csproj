@@ -8,7 +8,7 @@
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <CAMPath>C:\Program Files\ENCY Software\ENCY\Bin64</CAMPath>
-    <OutDir>bin</OutDir>
+    <OutDir>bin\$(Configuration)</OutDir>
   </PropertyGroup>
   
   <ItemGroup>
