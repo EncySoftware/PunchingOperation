@@ -8,7 +8,7 @@
             "name": "Launch CAM",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-op",
+            "preLaunchTask": "build",
             "program": "C:/Program Files/ENCY Software/ENCY/Bin64/ency.exe",
             "args": [],
             "cwd": "C:/Program Files/ENCY Software/ENCY/Bin64",

@@ -2,7 +2,63 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build-op",
+            "label": "build",
+            "command": ".stbuild/build.cmd",
+            "type": "process",
+            "args": [
+                "--Target Compile",
+                "--Variant Debug"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "pack",
+            "command": ".stbuild/build.cmd",
+            "type": "process",
+            "args": [
+                "--Target Pack",
+                "--Variant Release"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "clean release",
+            "command": ".stbuild/build.cmd",
+            "type": "process",
+            "args": [
+                "--Target Clean",
+                "--Variant Release"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "clean debug",
+            "command": ".stbuild/build.cmd",
+            "type": "process",
+            "args": [
+                "--Target Clean",
+                "--Variant Debug"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-op-seperately",
             "command": "dotnet",
             "type": "process",
             "args": [
@@ -14,11 +70,11 @@
             "problemMatcher": "$msCompile",
             "group": {
                 "kind": "build",
-                "isDefault": true
+                "isDefault": false
             }
         },
         {
-            "label": "build",
+            "label": "build-stbuild",
             "command": "dotnet",
             "type": "process",
             "args": [
