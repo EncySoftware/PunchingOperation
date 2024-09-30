@@ -32,6 +32,7 @@
             <Conf_MW DefaultValue="True"/>
             <Conf_4D DefaultValue="True"/>
             <Conf_5D DefaultValue="True"/>
+			<Conf_5DA DefaultValue="True"/>
         </OperationConfiguration>
 
         <CheckedGeometry Enabled="False"/>
