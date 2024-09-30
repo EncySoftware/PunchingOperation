@@ -3,11 +3,9 @@
     "tasks": [
         {
             "label": "build",
-            "command": ".stbuild/build.cmd",
-            "type": "process",
+            "command": ".stbuild/build.cmd --Target Compile --Variant Debug",
+            "type": "shell",
             "args": [
-                "--Target Compile",
-                "--Variant Debug"
             ],
             "problemMatcher": "$msCompile",
             "group": {
@@ -17,11 +15,9 @@
         },
         {
             "label": "pack",
-            "command": ".stbuild/build.cmd",
-            "type": "process",
+            "command": ".stbuild/build.cmd --Target Pack --Variant Release",
+            "type": "shell",
             "args": [
-                "--Target Pack",
-                "--Variant Release"
             ],
             "problemMatcher": "$msCompile",
             "group": {
@@ -31,11 +27,9 @@
         },
         {
             "label": "clean release",
-            "command": ".stbuild/build.cmd",
-            "type": "process",
+            "command": ".stbuild/build.cmd --Target Clean --Variant Release",
+            "type": "shell",
             "args": [
-                "--Target Clean",
-                "--Variant Release"
             ],
             "problemMatcher": "$msCompile",
             "group": {
@@ -45,11 +39,9 @@
         },
         {
             "label": "clean debug",
-            "command": ".stbuild/build.cmd",
-            "type": "process",
+            "command": ".stbuild/build.cmd --Target Clean --Variant Debug",
+            "type": "shell",
             "args": [
-                "--Target Clean",
-                "--Variant Debug"
             ],
             "problemMatcher": "$msCompile",
             "group": {
