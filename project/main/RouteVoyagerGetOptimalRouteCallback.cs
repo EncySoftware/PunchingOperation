@@ -5,28 +5,23 @@ namespace PunchingOperationExtension;
 /// <summary>
 /// Callback for getting optimal route
 /// </summary>
-public class RouteVoyagerGetOptimalRouteCallback : ICamApiRouteVoyagerGetOptimalRouteCallback
+public class RouteVoyagerGetOptimalRouteCallback(PunchItems punchItems) : ICamApiRouteVoyagerGetOptimalRouteCallback
 {
     /// <summary>
     /// Internal counter of items
     /// </summary>
-    private int currentItem;
+    private int _currentItem;
 
     /// <summary>
     /// Punch items to which Order have to be defined
     /// </summary>
-    private PunchItems punchItems;
+    private readonly PunchItems _punchItems = punchItems;
 
-    public RouteVoyagerGetOptimalRouteCallback(PunchItems punchItems)
-    {
-        currentItem = 0;
-        this.punchItems = punchItems;
-    }
     /// <summary>
     /// Some code for each point
     /// </summary>
     public void ExecuteAction(int index)
     {
-        punchItems.OrderIndex[currentItem++] = index;
+        _punchItems.OrderIndex[_currentItem++] = index;
     }
 }
