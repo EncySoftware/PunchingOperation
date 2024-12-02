@@ -7,9 +7,8 @@
         </SCType>
     </SCNameSpace>
 
-    <SCType ID="TPunchOP" Caption="Punching" type="TSTMillOp" Enabled = "True">
+    <SCType ID="TPunchOP" Caption="Punching" type="TSTMillExtensionOp" Enabled = "True">
         <GUID DefaultValue="{D765C8F9-9763-4F9F-81E3-3EA0CCC684F1}"/>
-        <ContainerID DefaultValue="{43B41AA1-9ECB-4A0A-B3B6-AC49AB672899}"/>
         <SolverID DefaultValue="PunchingOperationExtension.ToolPathCalculation"/>
 
         <!-- Header -->
@@ -23,18 +22,6 @@
             <SCType ID="Spray" OrderInGroup="10" type="TLinkToParentMultiGroup"/>
         </MultiGroup>
         <RestMode DefaultValue="Off"/>
-        <OperationConfiguration>
-            <Conf_Free DefaultValue="True"/>
-            <Conf_2D DefaultValue="True"/>
-            <Conf_25D DefaultValue="True"/>
-            <Conf_3D DefaultValue="True"/>
-            <Conf_3AD DefaultValue="True"/>
-            <Conf_MW DefaultValue="True"/>
-            <Conf_4D DefaultValue="True"/>
-            <Conf_5D DefaultValue="True"/>
-            <Conf_Robot DefaultValue="True"/>
-            <Conf_5DA DefaultValue="True"/>
-        </OperationConfiguration>
 
         <CheckedGeometry Enabled="False"/>
         <FeedSwitchLevel Enabled="True">
@@ -120,11 +107,6 @@
             <SCType ID="StartAngleOffset" Caption="Start angle offset" type="Double" DefaultValue="0"
                     Visible="[Pattern] != [Pattern.Round]"
                     DimensionKind="Angular"/>
-        </SCType>
-
-        <SCType ID="AxesBrakeUsingMode" Caption="Axes brakes using mode" type="Enumerated" DefaultValue="DoNotUse" Visible="False">
-            <SCType ID="DoNotUse" Caption="Do not use brakes" type="None"/>
-            <SCType ID="Always" Caption="Use brakes" type="None"/>
         </SCType>
     </SCType>
 

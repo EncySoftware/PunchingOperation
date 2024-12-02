@@ -6,35 +6,12 @@
     <Nullable>enable</Nullable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <Version>1.1.0-dev.1</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <CAMPath>C:\Program Files\ENCY Software\ENCY\Bin64</CAMPath>
     <OutDir>bin\$(Configuration)</OutDir>
   </PropertyGroup>
   
   <ItemGroup>
-<!--    <PackageReference Include="EncySoftware.CAMAPI.SDK.Net" Version="1.1.3" />-->
-    <Reference Include="$(CAMPath)\CAMAPI.ResultStatus.dll" />
-    <Reference Include="$(CAMPath)\CAMAPI.Extensions.dll" />
-    <Reference Include="$(CAMPath)\CAMAPI.Application.dll" />
-    <Reference Include="$(CAMPath)\CAMAPI.Singletons.dll" />
-    <Reference Include="$(CAMPath)\CAMAPI.Technologist.dll" />
-    <Reference Include="$(CAMPath)\CAMAPI.TechSolvers.dll" />
-    <Reference Include="$(CAMPath)\CAMAPI.Machine.dll" />
-    <Reference Include="$(CAMPath)\Geometry.VecMatrLib.dll" />      
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Reference Include="$(CAMPath)\STMeshTypes.dll" />
-    <Reference Include="$(CAMPath)\STCurveTypes.dll" />
-    <Reference Include="$(CAMPath)\STTypes.dll" />
-    <Reference Include="$(CAMPath)\STLibraryTypes.dll" />
-    <Reference Include="$(CAMPath)\STXMLPropTypes.dll" />
-    <Reference Include="$(CAMPath)\STMCDFormerTypes.dll" />
-    <Reference Include="$(CAMPath)\STCuttingToolTypes.dll" />
-    <Reference Include="$(CAMPath)\STOperationTypes.dll" />
-    <Reference Include="$(CAMPath)\STModelFormerTypes.dll" />
-    <Reference Include="$(CAMPath)\STSurfaceTypes.dll" />
-    <Reference Include="$(CAMPath)\STCustomPropTypes.dll" />
-    <Reference Include="$(CAMPath)\STModelFormerTypes.dll" />
+    <PackageReference Include="EncySoftware.CAMAPI.SDK.Net" Version="1.2.1-dev.27" />
   </ItemGroup>
 </Project>

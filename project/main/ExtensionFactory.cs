@@ -14,6 +14,8 @@ using ResultStatus;
 /// </summary>
 public class ExtensionFactory : IExtensionFactory
 {
+    private const string NodeOperationXMlName = "PunchingOperation_ExtOp.xml";
+    
     /// <summary>
     /// Create new instance of our extension
     /// </summary>
@@ -40,134 +42,126 @@ public class ExtensionFactory : IExtensionFactory
         return null;
     }
     
-    private XmlNode GetOperationsNode(XmlNode rootNode)
+    private XmlNode? GetOperationsNode(XmlNode? rootNode)
     {
-        if (rootNode!=null)
+        if (rootNode == null)
+            return null;
+        foreach (XmlNode childNode in rootNode.ChildNodes)
         {
-            foreach (XmlNode childNode in rootNode.ChildNodes)
-            {
-                if (childNode.Attributes != null && childNode.Attributes["ID"] != null && childNode.Attributes["ID"].Value == "Operations")
-                {
-                    return childNode;
-                }
-            }
-        }  
+            if (childNode.Attributes?["ID"]?.Value != "Operations")
+                continue;
+            return childNode;
+        }
+        
         return null;
     } 
-    private void DeleteOperationNode(XmlNode operationsNode, string OperationXMlName)
+    
+    private static void DeleteOperationNode(XmlNode? operationsNode, string operationXMlName)
     {
-        if (operationsNode!=null)
+        if (operationsNode == null)
+            return;
+        var childNode = operationsNode.FirstChild;
+        while (childNode!=null)
         {
-            var childNode = operationsNode.FirstChild;
-            while (childNode!=null)
+            var siblingNode = childNode.NextSibling;
+            if (childNode.InnerText.ToLower().EndsWith(operationXMlName.ToLower())) 
             {
-                var siblingNode = childNode.NextSibling;
-                if (childNode.InnerText.ToLower().EndsWith(OperationXMlName.ToLower())) 
-                {
-                    operationsNode.RemoveChild(childNode);
-                }
-                childNode = siblingNode;
+                operationsNode.RemoveChild(childNode);
             }
+            childNode = siblingNode;
         }
-    } 
-    public void OnLibraryRegistered(IExtensionFactoryContext Context, out TResultStatus ret)
+    }
+    
+    public void OnLibraryRegistered(IExtensionFactoryContext context, out TResultStatus ret)
     {
-        string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-        string OperationXMlName = "PunchingOperation_ExtOp.xml";
-        string pathToOperationXML = Path.GetDirectoryName(assemblyLocation) + "\\" + OperationXMlName;
-        string pathToUserOperationsList = Context.Paths.TryUnfoldPath(@"$(OPERATIONS_FOLDER)\UserOperationsList.xml");
-        if (File.Exists(pathToUserOperationsList))
+        ret = default;
+        try
         {
-            try
+            var assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+                                 ?? throw new Exception("Assembly location is null");
+            var pathToOperationXml = Path.Combine(assemblyFolder, NodeOperationXMlName);
+            var pathToUserOperationsList = Path.Combine(context.Paths.OperationsFolder, "UserOperationsList.xml");
+            
+            // create new one
+            if (File.Exists(pathToUserOperationsList))
             {
-                XmlDocument UserOperationsListDoc = new XmlDocument();
-                UserOperationsListDoc.Load(pathToUserOperationsList);
-                XmlNode rootNode = UserOperationsListDoc.DocumentElement;     
-                if (rootNode!=null)
-                {
-                    XmlNode operationsNode = GetOperationsNode(rootNode);
-                    if (operationsNode!=null)
-                    {
-                        DeleteOperationNode(operationsNode, OperationXMlName);
-                        XmlElement newOperationElement = UserOperationsListDoc.CreateElement("SCInclude");
-                        newOperationElement.InnerText = pathToOperationXML;
-                        XmlAttribute optionalAttr = UserOperationsListDoc.CreateAttribute("Optional");
-                        optionalAttr.Value = "true";
-                        newOperationElement.Attributes.Append(optionalAttr);
-                        operationsNode.AppendChild(newOperationElement);
-                        UserOperationsListDoc.Save(pathToUserOperationsList);
-                    }
-                }
+                var userOperationsListDoc = new XmlDocument();
+                userOperationsListDoc.Load(pathToUserOperationsList);
+                XmlNode? rootNode = userOperationsListDoc.DocumentElement;
+                if (rootNode == null)
+                    return;
+                var operationsNode = GetOperationsNode(rootNode);
+                if (operationsNode == null)
+                    return;
+                DeleteOperationNode(operationsNode, NodeOperationXMlName);
+                var newOperationElement = userOperationsListDoc.CreateElement("SCInclude");
+                newOperationElement.InnerText = pathToOperationXml;
+                var optionalAttr = userOperationsListDoc.CreateAttribute("Optional");
+                optionalAttr.Value = "true";
+                newOperationElement.Attributes.Append(optionalAttr);
+                operationsNode.AppendChild(newOperationElement);
+                userOperationsListDoc.Save(pathToUserOperationsList);
             }
-            catch (Exception ex)
+        
+            // update existing one
+            else
             {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
-        }
-        else
-        {
-             try
-            {
-                XmlDocument UserOperationsListDoc = new XmlDocument();
-                XmlDeclaration xmlDeclaration = UserOperationsListDoc.CreateXmlDeclaration("1.0", null, null);
-                UserOperationsListDoc.InsertBefore(xmlDeclaration, UserOperationsListDoc.DocumentElement);
+                var userOperationsListDoc = new XmlDocument();
+                var xmlDeclaration = userOperationsListDoc.CreateXmlDeclaration("1.0", null, null);
+                userOperationsListDoc.InsertBefore(xmlDeclaration, userOperationsListDoc.DocumentElement);
 
-                XmlElement rootElement = UserOperationsListDoc.CreateElement("SCCollection");
-                XmlAttribute rootIDAttr = UserOperationsListDoc.CreateAttribute("ID");
-                rootIDAttr.Value = @"$(OPERATIONS_FOLDER)\UserOperationsList.xml";
-                rootElement.Attributes.Append(rootIDAttr);
-                UserOperationsListDoc.AppendChild(rootElement);
+                var rootElement = userOperationsListDoc.CreateElement("SCCollection");
+                var rootIdAttr = userOperationsListDoc.CreateAttribute("ID");
+                rootIdAttr.Value = @"$(OPERATIONS_FOLDER)\UserOperationsList.xml";
+                rootElement.Attributes.Append(rootIdAttr);
+                userOperationsListDoc.AppendChild(rootElement);
 
-                XmlElement nameSpaceElement = UserOperationsListDoc.CreateElement("SCNameSpace");
-                XmlAttribute nameSpaceIDAttr = UserOperationsListDoc.CreateAttribute("ID");
-                nameSpaceIDAttr.Value = "Operations";
-                nameSpaceElement.Attributes.Append(nameSpaceIDAttr);
+                var nameSpaceElement = userOperationsListDoc.CreateElement("SCNameSpace");
+                var nameSpaceIdAttr = userOperationsListDoc.CreateAttribute("ID");
+                nameSpaceIdAttr.Value = "Operations";
+                nameSpaceElement.Attributes.Append(nameSpaceIdAttr);
                 rootElement.AppendChild(nameSpaceElement);
 
-                XmlElement newOperationElement = UserOperationsListDoc.CreateElement("SCInclude");
-                newOperationElement.InnerText = pathToOperationXML;
-                XmlAttribute optionalAttr = UserOperationsListDoc.CreateAttribute("Optional");
+                var newOperationElement = userOperationsListDoc.CreateElement("SCInclude");
+                newOperationElement.InnerText = pathToOperationXml;
+                var optionalAttr = userOperationsListDoc.CreateAttribute("Optional");
                 optionalAttr.Value = "true";
                 newOperationElement.Attributes.Append(optionalAttr);
                 nameSpaceElement.AppendChild(newOperationElement);
-                UserOperationsListDoc.Save(pathToUserOperationsList);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
+                userOperationsListDoc.Save(pathToUserOperationsList);
             }
         }
-        ret = default;
+        catch (Exception e)
+        {
+            ret.Code = TResultStatusCode.rsError;
+            ret.Description = e.Message;
+        }
     }
 
-    public void OnLibraryUnRegistered(IExtensionFactoryContext Context, out TResultStatus ret)
+    public void OnLibraryUnRegistered(IExtensionFactoryContext context, out TResultStatus ret)
     {
-        string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-        string OperationXMlName = "CuraEngineToolpath_ExtOp.xml";
-        string pathToOperationXML = Path.GetDirectoryName(assemblyLocation) + "\\" + OperationXMlName;
-        string pathToUserOperationsList = Context.Paths.TryUnfoldPath(@"$(OPERATIONS_FOLDER)\UserOperationsList.xml");
-        if (File.Exists(pathToUserOperationsList))
-        {
-            try
-            {
-                XmlDocument UserOperationsListDoc = new XmlDocument();
-                UserOperationsListDoc.Load(pathToUserOperationsList);
-                XmlNode rootNode = UserOperationsListDoc.DocumentElement;     
-                if (rootNode!=null)
-                {
-                    XmlNode operationsNode = GetOperationsNode(rootNode);
-                    if (operationsNode!=null)
-                    {
-                        DeleteOperationNode(operationsNode, OperationXMlName);
-                        UserOperationsListDoc.Save(pathToUserOperationsList);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
-        }
         ret = default;
+        var pathToUserOperationsList = Path.Combine(context.Paths.OperationsFolder, "UserOperationsList.xml");
+        if (!File.Exists(pathToUserOperationsList))
+            return;
+        
+        try
+        {
+            var userOperationsListDoc = new XmlDocument();
+            userOperationsListDoc.Load(pathToUserOperationsList);
+            XmlNode? rootNode = userOperationsListDoc.DocumentElement;
+            if (rootNode == null)
+                return;
+            var operationsNode = GetOperationsNode(rootNode);
+            if (operationsNode == null)
+                return;
+            DeleteOperationNode(operationsNode, NodeOperationXMlName);
+            userOperationsListDoc.Save(pathToUserOperationsList);
+        }
+        catch (Exception ex)
+        {
+            ret.Code = TResultStatusCode.rsError;
+            ret.Description = ex.Message;
+        }
     }
 }
