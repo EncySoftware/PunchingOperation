@@ -339,7 +339,7 @@ public class ExtensionToolPathCalculation :
             return;
         
         // get optimal route finder
-        using var routeFinderCom = SystemExtensionFactory.CreateExtension<ICamApiRouteVoyager>("Extension.Helper.RouteVoyager", Info);
+        using var routeFinderCom = SystemExtensionFactory.CreateExtension<ICamApiRouteVoyager>("Extension.Helper.RouteVoyager");
         var routeFinder = routeFinderCom.Instance
             ?? throw new Exception("RouteVoyager container is not initialized");
         routeFinder.GroupByPlanes = true;
