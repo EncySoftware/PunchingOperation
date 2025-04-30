@@ -16,3 +16,6 @@ https://github.com/EncySoftware/PunchingOperation/releases
 4. Run ENCY
 
 5. Then "Punching" operation will appear in the "Spray" section
+
+## AI Generated docs
+https://deepwiki.com/EncySoftware/PunchingOperation/1-overview
