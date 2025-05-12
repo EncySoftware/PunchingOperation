@@ -25,19 +25,42 @@ public class ExtensionToolPathCalculation :
     /// Additional information about extension, provided in json file. It initializes in main CAM application
     /// </summary>
     public IExtensionInfo? Info { get; set; }
+
+    /// <summary>
+    /// Identifier of subscriber, which is used to subscribe on events from operation
+    /// </summary>
+    private string _subscriberIdent = string.Empty;
     
+    /// <summary>
+    /// Wrapper over COM object, which is current operation
+    /// </summary>
+    private ComWrapper<ICamApiTechOperation>? _operationCom;
+    
+    /// <summary>
+    /// Subscriber on events from operation
+    /// </summary>
     private ICamApiEventHandler? _operationEventHandler;
 
+    /// <summary>
+    /// Subscribe on events from operation. Setting available items in job assignment
+    /// </summary>
     public void InitSolver(ICamApiTechOperationSolverInitializeContext context, out TResultStatus resultStatus)
     {
         resultStatus = default;
         try
         {
-            using var operationCom = new ComWrapper<ICamApiTechOperation>(context.TechOperation);
-            var operation = operationCom.Instance
-                ?? throw new Exception("TechOperation container is not initialized");
+            _operationCom = ComWrapper.Create(context.TechOperation);
             _operationEventHandler ??= new OperationEventHandler();
-            operation.RegisterHandler("OperationSolverExtension", _operationEventHandler, new ListString(), out resultStatus);
+            _operationCom.Invoke(operation =>
+            {
+                _subscriberIdent = "OperationSolverExtension_" + operation.Id;
+                operation.RegisterHandler(_subscriberIdent,
+                    _operationEventHandler,
+                    new ListString(),
+                    out var resultStatusLocal);
+                if (resultStatusLocal.Code == TResultStatusCode.rsError)
+                    throw new Exception(resultStatusLocal.Description);
+            });
         }
         catch (Exception e)
         {
@@ -46,9 +69,14 @@ public class ExtensionToolPathCalculation :
         }
     }
 
+    /// <summary>
+    /// Clear memory and unsubscribe from events
+    /// </summary>
     public void FinalizeSolver()
     {
+        _operationCom?.Invoke(operation => operation.UnregisterHandler(_subscriberIdent, out _));
         _operationEventHandler = null;
+        _operationCom?.Dispose();
     }
 
     public bool GetPropIterator(string pageId, out IST_CustomPropIterator? iterator,
@@ -64,32 +92,38 @@ public class ExtensionToolPathCalculation :
         //
     }
 
-    public void MakeWorkPath(ICamApiCLDReceiver? cldReceiver, ICamApiTechOperation? techOperation, out TResultStatus ret)
+    /// <summary>
+    /// Calculate tool path for punching operation
+    /// </summary>
+    /// <param name="cldReceiver">Object to save geometry CLData</param>
+    /// <param name="techOperation">Information about vurrent operation</param>
+    /// <param name="ret">Result of current method, if it contains error</param>
+    public void MakeWorkPath(ICamApiCLDReceiver? cldReceiver,
+        ICamApiTechOperation? techOperation,
+        out TResultStatus ret)
     {
         ret = default;
         try
         {
             if (techOperation == null || cldReceiver == null)
                 return;
-            using var cldFormerCom = new ComWrapper<ICamApiCLDReceiver>(cldReceiver);
-            var cldFormer = cldFormerCom.Instance
-                ?? throw new Exception("CLDReceiver container is not initialized");
-            using var operationCom = new ComWrapper<ICamApiTechOperation>(techOperation);
-            var operation = operationCom.Instance;
-            if (operation == null)
-                return;
-        
-            // get all points, we have to punch
-            var punchItems = CalcPunchItems(operation);
-        
-            // sort points, so that the tool moves in the optimal order
-            OptimizeOrder(operation, punchItems);
-        
-            // in each point choose the most optimal rotation
-            OptimizeRotation(operation, punchItems);
-        
-            // Output toolpath
-            OutToolpath(punchItems, cldFormer, operation);
+            
+            using var operationCom = ComWrapper.Create(techOperation);
+            operationCom.Invoke(operation =>
+            {
+                // get all points, we have to punch
+                var punchItems = CalcPunchItems(operation);
+
+                // sort points, so that the tool moves in the optimal order
+                OptimizeOrder(operation, punchItems);
+
+                // in each point choose the most optimal rotation
+                OptimizeRotation(operation, punchItems);
+
+                // Output toolpath
+                using var cldFormerCom = ComWrapper.Create(cldReceiver);
+                cldFormerCom.Invoke(cldFormer => OutToolpath(punchItems, cldFormer, operation));
+            });
         }
         catch (Exception e)
         {
@@ -446,7 +480,7 @@ public class ExtensionToolPathCalculation :
         return 1; //techOperation.XMLProp.Flt["TechOperation.TechTool.Diameter"];
     }
 
-    private void OutToolpath(PunchItems punchItems, ICamApiCLDReceiver cldFormer, ICamApiTechOperation techOperation)
+    private void OutToolpath(PunchItems punchItems, ICamApiCLDReceiver cldReceiver, ICamApiTechOperation techOperation)
     {
         // Make toolpath movements from punch points
         if (punchItems.Items.Count<1)
@@ -478,7 +512,8 @@ public class ExtensionToolPathCalculation :
                     continue;
                 var punchPoint = punchItem.OptimalPoint.Value;
 
-                cldFormer.BeginItem(TCLDItemType.aitGroup, "Point", $"Point {punchItems.OrderIndex[i]}");
+                cldReceiver.BeginItem(TCLDItemType.aitGroup, "Point", $"Point {punchItems.OrderIndex[i]}");
+                
                 // point above punch point on safe plane
                 var safePoint = punchPoint.LCS;
                 safePoint.vT.Z = safeLevel;
@@ -487,35 +522,35 @@ public class ExtensionToolPathCalculation :
                 var feedPoint = punchPoint.LCS;
                 feedPoint.vT.Z = feedLevel;
 
-                cldFormer.OutStandardFeed((int)TFeedTypeFlag.affRapid5D);
+                cldReceiver.OutStandardFeed((int)TFeedTypeFlag.affRapid5D);
                 if (punchItems.Pattern.Is5D)
-                    cldFormer.CutTo5d(safePoint.vT, safePoint.vZ);
+                    cldReceiver.CutTo5d(safePoint.vT, safePoint.vZ);
                 else
-                    cldFormer.CutTo6d(safePoint);
+                    cldReceiver.CutTo6d(safePoint);
 
-                cldFormer.OutStandardFeed((int)TFeedTypeFlag.affPlunge);
+                cldReceiver.OutStandardFeed((int)TFeedTypeFlag.affPlunge);
                 if (punchItems.Pattern.Is5D)
-                    cldFormer.CutTo5d(feedPoint.vT, feedPoint.vZ);
+                    cldReceiver.CutTo5d(feedPoint.vT, feedPoint.vZ);
                 else
-                    cldFormer.CutTo6d(feedPoint);
+                    cldReceiver.CutTo6d(feedPoint);
 
-                cldFormer.OutStandardFeed((int)TFeedTypeFlag.affWorking);
+                cldReceiver.OutStandardFeed((int)TFeedTypeFlag.affWorking);
                 if (punchItems.Pattern.Is5D)
-                    cldFormer.CutTo5d(punchPoint.LCS.vT, punchPoint.LCS.vZ);
+                    cldReceiver.CutTo5d(punchPoint.LCS.vT, punchPoint.LCS.vZ);
                 else
-                    cldFormer.CutTo6d(punchPoint.LCS);
+                    cldReceiver.CutTo6d(punchPoint.LCS);
 
                 // punch
-                cldFormer.AddComment("Punch");
+                cldReceiver.AddComment("Punch");
 
                 // go up
-                cldFormer.OutStandardFeed((int)TFeedTypeFlag.affReturn);
+                cldReceiver.OutStandardFeed((int)TFeedTypeFlag.affReturn);
                 if (punchItems.Pattern.Is5D)
-                    cldFormer.CutTo5d(safePoint.vT, safePoint.vZ);
+                    cldReceiver.CutTo5d(safePoint.vT, safePoint.vZ);
                 else
-                    cldFormer.CutTo6d(safePoint);
+                    cldReceiver.CutTo6d(safePoint);
 
-                cldFormer.EndItem();
+                cldReceiver.EndItem();
             }
         }
         finally
