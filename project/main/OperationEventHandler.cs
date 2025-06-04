@@ -9,21 +9,27 @@ namespace PunchingOperationExtension;
 public class OperationEventHandler : ICamApiEventHandler,
     ICamApiHandlerTechOperationInitModelFormers
 {
+    /// <summary>
+    /// Create a class, which implements ICamApiModelFormerMakeSupportedItems - it's object
+    /// will be passed to the method MakeSupportedItems
+    /// </summary>
     private class ModelFormerMakeSupportedItems : ICamApiModelFormerMakeSupportedItems
     {
         public void MakeSupportedItems(ICamApiModelFormerSupportedItems itemsObj)
         {
-            using var itemsCom = new ComWrapper<ICamApiModelFormerSupportedItems>(itemsObj);
-            var items = itemsCom.Instance
-                ?? throw new Exception("Failed to get supported items");
-            items.AddItem("Curve", 
-                InterfaceInfo.IID<ICamApiCurvesArrayModelItem>(),
-                "", "Curve", "", "", false, null);
+            using var itemsCom = ComWrapper.Create(itemsObj);
+            itemsCom.Invoke(items => 
+            {
+                items.AddItem("Curve", 
+                    InterfaceInfo.IID<ICamApiCurvesArrayModelItem>(),
+                    "", "Curve", "", "",
+                    false, null);
+            });
         }
     }
     
     /// <summary>
-    /// We always return false, because only one event is supported
+    /// We always return false, because only one event is supported. And this method should be synchronous
     /// </summary>
     public bool GetAsyncMode(string interfaceUid)
     {
@@ -35,7 +41,7 @@ public class OperationEventHandler : ICamApiEventHandler,
     /// </summary>
     public void InitModelFormers(ICamApiModelFormer modelFormersObj)
     {
-        using var modelFormersCom = new ComWrapper<ICamApiModelFormer>(modelFormersObj);
+        using var modelFormersCom = ComWrapper.Create(modelFormersObj);
         var modelFormers = modelFormersCom.Instance
             ?? throw new Exception("Failed to get model formers");
         

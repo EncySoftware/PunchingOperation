@@ -6,12 +6,21 @@
     <Nullable>enable</Nullable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <OutDir>bin\$(Configuration)</OutDir>
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="EncySoftware.CAMAPI.SDK.Net" Version="1.4.0" />
+    <PackageReference Include="EncySoftware.CAMAPI.SDK.Net" Version="1.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="PunchingOperation_ExtOp.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="PunchingOperationExtension.settings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
