@@ -219,7 +219,7 @@ public class ExtensionToolPathCalculation :
         // through all points in curve search 4 points, which are the farthest from the center
         var points = new List<T3DPoint>();
         var distances = new Dictionary<int, double>();
-        for (var i = 0; i < curve.QntP; i++)
+        for (var i = 0; i <= curve.QntP; i++)
         {
             var point = curve.KnotPoint[i];
             var distance = T3DPoint.Distance(center, point);
@@ -274,7 +274,7 @@ public class ExtensionToolPathCalculation :
         // through all points in curve search 5 points, which are the farthest from the center
         var points = new List<T3DPoint>();
         var distances = new Dictionary<int, double>();
-        for (var i = 0; i < curve.QntP; i++)
+        for (var i = 0; i <= curve.QntP; i++)
         {
             var point = curve.KnotPoint[i];
             var distance = T3DPoint.Distance(center, point);
@@ -321,14 +321,14 @@ public class ExtensionToolPathCalculation :
     private PunchItem RecognizeCustom(ICamApiCurve curve, PunchPattern pattern) {
         // find center of curve
         var center = T3DPoint.Zero;
-        for (var i = 0; i < curve.QntP; i++)
+        for (var i = 0; i <= curve.QntP; i++)
             center += curve.KnotPoint[i];
-        center /= curve.QntP;
+        center /= (curve.QntP+1);
 
         // find the most far point of curve from the center
         var farPoint = curve.KnotPoint[0];
         var farDistance = T3DPoint.Distance(center, farPoint);
-        for (var i = 1; i < curve.QntP; i++)
+        for (var i = 1; i <= curve.QntP; i++)
         {
             var p = curve.KnotPoint[i];
             var distance = T3DPoint.Distance(center, p);
