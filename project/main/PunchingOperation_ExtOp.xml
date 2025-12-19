@@ -15,8 +15,7 @@
         <Name DefaultValue="Punching"/>
         <Comment DefaultValue="Punching"/>
         <Image DefaultValue="$(SUPPLEMENT_FOLDER)\operations\MillOperations\Images\Knife5D.bmp"/>
-        <Icon DefaultValue="$(SUPPLEMENT_FOLDER)\operations\MillOperations\Images\Knife5DIcon.bmp"/>
-        <Video DefaultValue="$(SUPPLEMENT_FOLDER)\operations\MillOperations\Video\Knife5D.wmv"/>
+        <Icon DefaultValue="$(SUPPLEMENT_FOLDER)\operations\MillOperations\Images\Knife6DIcon.bmp"/>
         <OperationGroup DefaultValue="Mill"/>
         <MultiGroup>
             <SCType ID="Spray" OrderInGroup="10" type="TLinkToParentMultiGroup"/>

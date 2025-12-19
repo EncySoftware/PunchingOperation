@@ -9,9 +9,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "C:/Program Files/ENCY Software/ENCY/Bin64/ency.exe",
+            "program": "C:/Program Files/ENCY Software/ENCY 2/Bin64/ency.exe",
             "args": [],
-            "cwd": "C:/Program Files/ENCY Software/ENCY/Bin64",
+            "cwd": "C:/Program Files/ENCY Software/ENCY 2/Bin64",
             "console": "integratedTerminal",
             "stopAtEntry": false
         },
