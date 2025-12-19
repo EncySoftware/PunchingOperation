@@ -7,7 +7,8 @@
             "OperationSolver": {
                 "name": "Punching operation extension",
                 "caption": "Extensions to calculate tool path for punching",
-                "id": "PunchingOperationExtension.ToolPathCalculation"
+                "id": "PunchingOperationExtension.ToolPathCalculation",
+                "version": "1.0.3"
             }
         }
     ]
