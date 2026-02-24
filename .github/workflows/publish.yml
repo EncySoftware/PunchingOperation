@@ -41,5 +41,5 @@ jobs:
         run: |
           dotnet nuget push "${{ env.PACKAGE_PATH }}" `
             --api-key ${{ secrets.NUGET_TEST_AUTH_TOKEN }} `
-            --source https://api.int.nugettest.org/v3/index.json `
+            --source https://apiint.nugettest.org/v3/index.json `
             --skip-duplicate
