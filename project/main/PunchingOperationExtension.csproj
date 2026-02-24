@@ -4,11 +4,16 @@
     <NoWarn>NETSDK1138;1591</NoWarn>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <Version>1.2.3</Version>
+    <Version>1.2.5</Version>
+	<Authors>ENCY</Authors>
+	<PackageId>EncySoftware.PunchingOperation</PackageId>
+	<PackageTags>cam-extension;operation</PackageTags>
+	<Description>New operation, which calculates 6 degree of freedom toolpath. The user can define set of planar curves like rectangles, stars or circles in the Job assignment. The operation recognizes shape, corners of each shape and orients the punch end effector to match the corners on the punch with the corners on the original outline.</Description>
+	<PackageProjectUrl>https://github.com/EncySoftware/PunchingOperation</PackageProjectUrl>
+	<RepositoryUrl>https://github.com/EncySoftware/PunchingOperation</RepositoryUrl>
+	<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <OutDir>bin\$(Configuration)</OutDir>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   
   <ItemGroup>
@@ -16,10 +21,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="PunchingOperation_ExtOp.xml">
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="PunchingOperation_ExtOp.xml" Pack="true" PackagePath="contentFiles\any\any\;lib\net8.0-windows\">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="PunchingOperationExtension.settings.json">
+    </None>  
+    <None Include="PunchingOperationExtension.settings.json" Pack="true" PackagePath="contentFiles\any\any\;lib\net8.0-windows\">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
