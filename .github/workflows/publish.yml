@@ -9,9 +9,9 @@ on:
 jobs:
   publish:
     runs-on: windows-latest
-  defaults:
-    run:
-      working-directory: ./project/main
+    defaults:
+      run:
+        working-directory: ./project/main
     steps:
       - uses: actions/checkout@v4
 
