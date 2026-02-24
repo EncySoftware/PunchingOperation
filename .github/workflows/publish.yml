@@ -4,10 +4,14 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   publish:
     runs-on: windows-latest
+  defaults:
+    run:
+      working-directory: ./project/main
     steps:
       - uses: actions/checkout@v4
 
