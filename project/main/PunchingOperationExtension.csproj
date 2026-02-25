@@ -24,10 +24,10 @@
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="\"/>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-    <None Include="PunchingOperation_ExtOp.xml" Pack="true" PackagePath="contentFiles\any\any\;lib\net8.0-windows\">
+    <None Include="PunchingOperation_ExtOp.xml" Pack="true" PackagePath="contentFiles\any\any\">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>  
-    <None Include="PunchingOperationExtension.settings.json" Pack="true" PackagePath="contentFiles\any\any\;lib\net8.0-windows\">
+    <None Include="PunchingOperationExtension.settings.json" Pack="true" PackagePath="contentFiles\any\any\">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
