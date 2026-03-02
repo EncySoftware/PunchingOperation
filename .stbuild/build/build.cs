@@ -58,7 +58,7 @@ public class Build : NukeBuild
     private ILogger InitLogger() {
         // logging to console
         var console = new LoggerConsole();
-        console.setMinLevel(LogLevel.debug);
+        console.setMinLevel(LogLevel.info);
         
         // logging to file
         var file = new LoggerFile(Path.Combine(RootDirectory, "logs"), "log", 7);
