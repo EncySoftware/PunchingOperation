@@ -15,6 +15,7 @@ using BuildSystem.PackageManager.Dotnet;
 using BuildSystem.SettingsReader;
 using BuildSystem.SettingsReader.Object;
 using BuildSystem.Variants;
+using BuildSystem.VersionManager.Common;
 using LoggingLevel = BuildSystem.Logging.LogLevel;
 
 // ReSharper disable AllUnderscoreLocalParameterName
@@ -57,7 +58,7 @@ public class Build : NukeBuild
     {
         // logging to console
         var console = new LoggerConsole();
-        console.setMinLevel(LoggingLevel.info);
+        console.setMinLevel(LoggingLevel.debug);
 
         // logging to file
         var file = new LoggerFile(Path.Combine(RootDirectory, "logs"), "log", 7);
@@ -73,6 +74,9 @@ public class Build : NukeBuild
     private IBuildSpace InitBuildSpace()
     {
         BuildInfo.RunParams[RunInfo.Variant] = Variant;
+        var branchName = Environment.GetEnvironmentVariable("CURRENT_BRANCH");
+        if (string.IsNullOrEmpty(branchName))
+            throw new InvalidOperationException("CURRENT_BRANCH environment variable is not set");
 
         var settings = new SettingsObject
         {
@@ -122,12 +126,21 @@ public class Build : NukeBuild
                         Url = Environment.GetEnvironmentVariable("NUGET_FEED_URL"),
                         ApiKey = Environment.GetEnvironmentVariable("NUGET_AUTH_TOKEN")
                     }
+                },
+                new VersionManagerCommonProps
+                {
+                    Name = "VersionManagerCommon",
+                    DepthSearch = 2,
+                    DevelopBranchName = branchName.EndsWith("develop", StringComparison.OrdinalIgnoreCase) ? branchName : "develop",
+                    MasterBranchName =  branchName.EndsWith("main", StringComparison.OrdinalIgnoreCase)  ? branchName : "main",
+                    ReleaseBranchName = branchName.EndsWith("release", StringComparison.OrdinalIgnoreCase) ? branchName : "release"
                 }
             }
         };
         settings.ManagerNames.Add("builder", "Debug", "BuilderDotnet");
         settings.ManagerNames.Add("builder", "Release", "BuilderDotnet");
         settings.ManagerNames.Add("package_manager", "Release", "PackageManagerDotnet");
+        settings.ManagerNames.Add("version_manager", "Release", "VersionManagerCommon");
 
         var tempDir = Path.Combine(RootDirectory, "temp");
         return new BuildSpaceCommon(_logger, tempDir, SettingsReaderType.Object, settings);
