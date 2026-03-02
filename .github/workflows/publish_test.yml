@@ -22,4 +22,4 @@ jobs:
           NUGET_FEED_URL: https://apiint.nugettest.org/v3/index.json
           NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TEST_AUTH_TOKEN }}
         run: |
-          build.cmd --Target Push --Variant Release
+          ./build.cmd --Target Push --Variant Release
