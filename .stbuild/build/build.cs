@@ -10,6 +10,8 @@ using BuildSystem.Info;
 using BuildSystem.Loggers;
 using BuildSystem.Logging;
 using BuildSystem.ManagerObject;
+using BuildSystem.Package;
+using BuildSystem.PackageManager.Dotnet;
 using BuildSystem.SettingsReader;
 using BuildSystem.SettingsReader.Object;
 using BuildSystem.Variants;
@@ -25,7 +27,7 @@ public class Build : NukeBuild
     /// Calling target by default
     /// </summary>
     public static int Main() => Execute<Build>(x => x.Pack);
-    
+
     /// <summary>
     /// Configuration to build - 'Debug' (default) or 'Release'
     /// </summary>
@@ -36,7 +38,7 @@ public class Build : NukeBuild
     /// Logging object
     /// </summary>
     private readonly ILogger _logger;
-    
+
     /// <summary>
     /// Main build space as manager over projects
     /// </summary>
@@ -46,20 +48,21 @@ public class Build : NukeBuild
     /// Build system
     /// </summary>
     public Build()
-    { 
+    {
         _logger = InitLogger();
-        _buildSpace = InitBuildSpace();        
+        _buildSpace = InitBuildSpace();
     }
-    
-    private ILogger InitLogger() {
+
+    private ILogger InitLogger()
+    {
         // logging to console
         var console = new LoggerConsole();
         console.setMinLevel(LoggingLevel.info);
-        
+
         // logging to file
         var file = new LoggerFile(Path.Combine(RootDirectory, "logs"), "log", 7);
         file.setMinLevel(LoggingLevel.debug);
-        
+
         // singleton to transfer logs to all other loggers
         var logger = new LoggerBroadCaster();
         logger.Loggers.Add(file);
@@ -70,12 +73,13 @@ public class Build : NukeBuild
     private IBuildSpace InitBuildSpace()
     {
         BuildInfo.RunParams[RunInfo.Variant] = Variant;
-        
+
         var settings = new SettingsObject
         {
             Projects = new HashSet<string>
             {
-                Path.Combine(RootDirectory.Parent, "project", "main", ".stbuild", "PunchingOperationExtensionProject.json")
+                Path.Combine(RootDirectory.Parent, "project", "main", ".stbuild",
+                    "PunchingOperationExtensionProject.json")
             },
             Variants = new VariantList
             {
@@ -109,12 +113,22 @@ public class Build : NukeBuild
                 new BuilderDotnetProps
                 {
                     Name = "BuilderDotnet"
+                },
+                new PackageManagerDotnetProps
+                {
+                    Name = "PackageManagerDotnet",
+                    SetStorageInfo = (_, _, _) => new StorageInfo
+                    {
+                        Url = Environment.GetEnvironmentVariable("NUGET_FEED_URL"),
+                        ApiKey = Environment.GetEnvironmentVariable("NUGET_AUTH_TOKEN")
+                    }
                 }
             }
         };
         settings.ManagerNames.Add("builder", "Debug", "BuilderDotnet");
         settings.ManagerNames.Add("builder", "Release", "BuilderDotnet");
-        
+        settings.ManagerNames.Add("package_manager", "Release", "PackageManagerDotnet");
+
         var tempDir = Path.Combine(RootDirectory, "temp");
         return new BuildSpaceCommon(_logger, tempDir, SettingsReaderType.Object, settings);
     }
@@ -140,13 +154,13 @@ public class Build : NukeBuild
                               ?? throw new Exception("Build results with dll type not found");
                 var dllFolder = Path.GetDirectoryName(dllPath)
                                 ?? throw new Exception("Parent folder of dll path is null");
-                
+
                 // copy settings file
                 var jsonPath = Path.ChangeExtension(mainProjectFilePath, ".settings.json");
                 if (!File.Exists(jsonPath))
                     throw new Exception("Settings file not found");
                 File.Copy(jsonPath, Path.ChangeExtension(dllPath, ".settings.json"), true);
-                
+
                 // copy xml file
                 var sourceXmlPath = Path.Combine(mainProjectFolder, "PunchingOperation_ExtOp.xml");
                 if (!File.Exists(sourceXmlPath))
@@ -161,10 +175,7 @@ public class Build : NukeBuild
     /// </summary>
     // ReSharper disable once UnusedMember.Local
     private Target Clean => _ => _
-        .Executes(() =>
-        {
-            _buildSpace.Projects.Clean(Variant);
-        });
+        .Executes(() => { _buildSpace.Projects.Clean(Variant); });
 
     /// <summary>
     /// Create .dext file, which can be injected
@@ -184,7 +195,7 @@ public class Build : NukeBuild
 
                 // path to json, describing extension (to be included into dext)
                 var jsonPath = Path.ChangeExtension(dllPath, ".settings.json");
-                
+
                 // additional files
                 var xmlOperation = Path.Combine(dllFolder, "PunchingOperation_ExtOp.xml");
 
@@ -202,5 +213,16 @@ public class Build : NukeBuild
                 archive.CreateEntryFromFile(xmlOperation, Path.GetFileName(xmlOperation));
                 _logger.head($"Created dext file: {dextPath}");
             }
+        });
+
+    /// <summary>
+    /// Push packages to the NuGet feed
+    /// </summary>
+    // ReSharper disable once UnusedMember.Local
+    private Target Push => _ => _
+        .DependsOn(Compile)
+        .Executes(() =>
+        {
+            _buildSpace.Projects.Deploy(Variant);
         });
 }
