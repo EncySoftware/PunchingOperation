@@ -74,9 +74,9 @@ public class Build : NukeBuild
     private IBuildSpace InitBuildSpace()
     {
         BuildInfo.RunParams[RunInfo.Variant] = Variant;
-        var branchName = Environment.GetEnvironmentVariable("CURRENT_BRANCH");
+        var branchName = Environment.GetEnvironmentVariable("GITHUB_REF_NAME");
         if (string.IsNullOrEmpty(branchName))
-            throw new InvalidOperationException("CURRENT_BRANCH environment variable is not set");
+            throw new InvalidOperationException("GITHUB_REF_NAME environment variable is not set");
 
         var settings = new SettingsObject
         {
