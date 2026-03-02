@@ -5,10 +5,12 @@ using System.IO.Compression;
 using System.Linq;
 using BuildSystem;
 using BuildSystem.Core.Builders.Dotnet;
+using BuildSystem.Core.HashGenerator;
 using BuildSystem.Core.PackageManager;
 using BuildSystem.Core.VersionManager;
 using Nuke.Common;
 using BuildSystem.Info;
+using BuildSystem.ManagerObject.Interfaces;
 using BuildSystem.ManagerObject.Interfaces.Package;
 using BuildSystem.ManagerObject.Interfaces.Variants;
 using BuildSystem.ProjectList;
@@ -141,9 +143,16 @@ public class Build : NukeBuild
                     ReleaseBranchName = gitBranch.EndsWith("release", StringComparison.OrdinalIgnoreCase)
                         ? gitBranch
                         : "release"
+                },
+                new HashGeneratorCommonProps()
+                {
+                    Name = "HashGeneratorCommon",
+                    HashAlgorithmType = HashAlgorithmType.Sha256
                 }
             ]
         };
+        settings.ManagerNames.Add("hash_generator", "Debug", "HashGeneratorCommon");
+        settings.ManagerNames.Add("hash_generator", "Release", "HashGeneratorCommon");
         settings.ManagerNames.Add("builder", "Debug", "BuilderDotnet");
         settings.ManagerNames.Add("builder", "Release", "BuilderDotnet");
         settings.ManagerNames.Add("package_manager", "Release", "PackageManagerDotnet");
@@ -159,15 +168,28 @@ public class Build : NukeBuild
     
     private List<StorageInfo> SetStorageInfoFunc(PackageAction packageAction, string packageId, VersionProp? packageVersion)
     {
-        return
-        [
-            new StorageInfo
+        // add the main feed anyway
+        var result = new List<StorageInfo>
+        {
+            new()
             {
                 Url = Environment.GetEnvironmentVariable("NUGET_FEED_URL")
                       ?? throw new Exception("Environment variable NUGET_FEED_URL is not set"),
                 ApiKey = Environment.GetEnvironmentVariable("NUGET_AUTH_TOKEN") ?? ""
             }
-        ];
+        };
+        
+        // for search purposes add other feeds
+        if (packageAction != PackageAction.Push)
+        {
+            result.Add(new StorageInfo
+            {
+                Url = "https://nexus.encycam.com/repository/master/index.json"
+            });
+        }
+        
+        // result
+        return result;
     }
 
     /// <summary>
