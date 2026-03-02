@@ -7,6 +7,7 @@ using BuildSystem;
 using BuildSystem.Core.Builders.Dotnet;
 using BuildSystem.Core.HashGenerator;
 using BuildSystem.Core.PackageManager;
+using BuildSystem.Core.ProjectCache;
 using BuildSystem.Core.VersionManager;
 using Nuke.Common;
 using BuildSystem.Info;
@@ -78,6 +79,26 @@ public class Build : NukeBuild
         BuildInfo.RunParams[RunInfo.Variant] = Variant;
         var gitBranch = GitBranch;
 
+        var versionManagerProps = new VersionManagerCommonProps
+        {
+            Name = "VersionManagerCommon",
+            DepthSearch = 2,
+            DevelopBranchName = gitBranch.EndsWith("develop", StringComparison.OrdinalIgnoreCase)
+                ? gitBranch
+                : "develop",
+            MasterBranchName = gitBranch.EndsWith("main", StringComparison.OrdinalIgnoreCase)
+                ? gitBranch
+                : "main",
+            ReleaseBranchName = gitBranch.EndsWith("release", StringComparison.OrdinalIgnoreCase)
+                ? gitBranch
+                : "release"
+        };
+        var packageManagerProps = new PackageManagerDotnetProps
+        {
+            Name = "PackageManagerDotnet",
+            SetStorageInfo = SetStorageInfoFunc
+        };
+
         var settings = new SettingsObject
         {
             Projects =
@@ -123,31 +144,19 @@ public class Build : NukeBuild
                 {
                     Name = "BuilderDotnet"
                 },
-
-                new PackageManagerDotnetProps
-                {
-                    Name = "PackageManagerDotnet",
-                    SetStorageInfo = SetStorageInfoFunc
-                },
-
-                new VersionManagerCommonProps
-                {
-                    Name = "VersionManagerCommon",
-                    DepthSearch = 2,
-                    DevelopBranchName = gitBranch.EndsWith("develop", StringComparison.OrdinalIgnoreCase)
-                        ? gitBranch
-                        : "develop",
-                    MasterBranchName = gitBranch.EndsWith("main", StringComparison.OrdinalIgnoreCase)
-                        ? gitBranch
-                        : "main",
-                    ReleaseBranchName = gitBranch.EndsWith("release", StringComparison.OrdinalIgnoreCase)
-                        ? gitBranch
-                        : "release"
-                },
-                new HashGeneratorCommonProps()
+                packageManagerProps,
+                versionManagerProps,
+                new HashGeneratorCommonProps
                 {
                     Name = "HashGeneratorCommon",
                     HashAlgorithmType = HashAlgorithmType.Sha256
+                },
+                new ProjectCacheNuGetProps
+                {
+                    Name = "ProjectCacheNuGet",
+                    VersionManagerProps = versionManagerProps,
+                    PackageManagerProps = packageManagerProps,
+                    TempDir = Path.Combine(RootDirectory, "temp")
                 }
             ]
         };
@@ -157,6 +166,7 @@ public class Build : NukeBuild
         settings.ManagerNames.Add("builder", "Release", "BuilderDotnet");
         settings.ManagerNames.Add("package_manager", "Release", "PackageManagerDotnet");
         settings.ManagerNames.Add("version_manager", "Release", "VersionManagerCommon");
+        settings.ManagerNames.Add("project_cache", "Release", "ProjectCacheNuGet");
         settings.ReaderLocalVars = new Dictionary<string, string?>
         {
             ["package_namespace"] = "EncySoftware"
