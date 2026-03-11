@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <Authors>ENCY</Authors>
     <PackageId>EncySoftware.PunchingOperation</PackageId>
-    <PackageTags>cam-extension;operationsolver</PackageTags>
+    <PackageTags>encycam-extension;operationsolver</PackageTags>
     <Description>New operation, which calculates 6 degree of freedom toolpath. The user can define set of planar curves like rectangles, stars or circles in the Job assignment. The operation recognizes shape, corners of each shape and orients the punch end effector to match the corners on the punch with the corners on the original outline.</Description>
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl>https://github.com/EncySoftware/PunchingOperation</PackageProjectUrl>
