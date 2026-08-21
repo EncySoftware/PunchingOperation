@@ -80,7 +80,9 @@ public class ExtensionFactory : IExtensionFactory
             var assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
                                  ?? throw new Exception("Assembly location is null");
             var pathToOperationXml = Path.Combine(assemblyFolder, NodeOperationXMlName);
-            var pathToUserOperationsList = Path.Combine(context.Paths.TryUnfoldPath(@"$(PROGRAM_COMMON_APPDATA)\Operations"), "UserOperationsList.xml");
+            var operationsFolder = context.Paths.TryUnfoldPath(@"$(PROGRAM_COMMON_APPDATA)\Operations");
+            Directory.CreateDirectory(operationsFolder);
+            var pathToUserOperationsList = Path.Combine(operationsFolder, "UserOperationsList.xml");
 
             // create new one
             if (File.Exists(pathToUserOperationsList))
