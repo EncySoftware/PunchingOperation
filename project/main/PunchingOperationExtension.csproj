@@ -17,7 +17,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="EncySoftware.CAMAPI.SDK.Net" Version="3.0.7-dev.4" />
+    <PackageReference Include="EncySoftware.CAMAPI.SDK.Net" Version="3.0.6" />
   </ItemGroup>
 
   <ItemGroup>
