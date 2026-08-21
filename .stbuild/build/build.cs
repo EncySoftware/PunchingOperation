@@ -2,18 +2,23 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.IO.Compression;
+using System.Linq;
+using BuildSystem;
+using BuildSystem.Core.Builders.Dotnet;
+using BuildSystem.Core.HashGenerator;
+using BuildSystem.Core.PackageManager;
+using BuildSystem.Core.ProjectCache;
+using BuildSystem.Core.VersionManager;
 using Nuke.Common;
-using BuildSystem.Builder.Dotnet;
-using BuildSystem.BuildSpace;
-using BuildSystem.BuildSpace.Common;
 using BuildSystem.Info;
-using BuildSystem.Loggers;
-using BuildSystem.Logging;
-using BuildSystem.ManagerObject;
-using BuildSystem.SettingsReader;
-using BuildSystem.SettingsReader.Object;
-using BuildSystem.Variants;
-using LoggingLevel = BuildSystem.Logging.LogLevel;
+using BuildSystem.ManagerObject.Interfaces;
+using BuildSystem.ManagerObject.Interfaces.Package;
+using BuildSystem.ManagerObject.Interfaces.Variants;
+using BuildSystem.ProjectList;
+using Loggers;
+using Logging;
+using Nuke.Common.Utilities.Collections;
+using LogLevel = Logging.LogLevel;
 
 // ReSharper disable AllUnderscoreLocalParameterName
 
@@ -24,8 +29,16 @@ public class Build : NukeBuild
     /// <summary>
     /// Calling target by default
     /// </summary>
-    public static int Main() => Execute<Build>(x => x.Pack);
-    
+    public static int Main()
+    {
+        var parentDirectory = new DirectoryInfo(EnvironmentInfo.WorkingDirectory)
+            .DescendantsAndSelf(x => x.Parent ?? throw new Exception("Parent directory is null for " + x.FullName))
+            .First(x => x.GetDirectories(".stbuild").Any())
+            .FullName;
+        Environment.SetEnvironmentVariable("root", Path.Combine(parentDirectory, ".stbuild"));
+        return Execute<Build>(x => x.Pack);
+    }
+
     /// <summary>
     /// Configuration to build - 'Debug' (default) or 'Release'
     /// </summary>
@@ -35,30 +48,24 @@ public class Build : NukeBuild
     /// <summary>
     /// Logging object
     /// </summary>
-    private readonly ILogger _logger;
-    
+    private ILogger? _logger;
+    private ILogger Logger => _logger ??= InitLogger();
+
     /// <summary>
     /// Main build space as manager over projects
     /// </summary>
-    private readonly IBuildSpace _buildSpace;
-
-    /// <summary>
-    /// Build system
-    /// </summary>
-    public Build()
-    { 
-        _logger = InitLogger();
-        _buildSpace = InitBuildSpace();        
-    }
+    private IBuildSpace? _buildSpace;
+    private IBuildSpace BuildSpace => _buildSpace ??= InitBuildSpace();
+    private string GitBranch => Environment.GetEnvironmentVariable("GITHUB_REF_NAME") + "";
     
     private ILogger InitLogger() {
         // logging to console
         var console = new LoggerConsole();
-        console.setMinLevel(LoggingLevel.info);
+        console.setMinLevel(LogLevel.info);
         
         // logging to file
         var file = new LoggerFile(Path.Combine(RootDirectory, "logs"), "log", 7);
-        file.setMinLevel(LoggingLevel.debug);
+        file.setMinLevel(LogLevel.debug);
         
         // singleton to transfer logs to all other loggers
         var logger = new LoggerBroadCaster();
@@ -70,53 +77,129 @@ public class Build : NukeBuild
     private IBuildSpace InitBuildSpace()
     {
         BuildInfo.RunParams[RunInfo.Variant] = Variant;
-        
+        var gitBranch = GitBranch;
+
+        var versionManagerProps = new VersionManagerCommonProps
+        {
+            Name = "VersionManagerCommon",
+            DepthSearch = 2,
+            DevelopBranchName = gitBranch.EndsWith("develop", StringComparison.OrdinalIgnoreCase)
+                ? gitBranch
+                : "develop",
+            MasterBranchName = gitBranch.EndsWith("main", StringComparison.OrdinalIgnoreCase)
+                ? gitBranch
+                : "main",
+            ReleaseBranchName = gitBranch.EndsWith("release", StringComparison.OrdinalIgnoreCase)
+                ? gitBranch
+                : "release"
+        };
+        var packageManagerProps = new PackageManagerDotnetProps
+        {
+            Name = "PackageManagerDotnet",
+            SetStorageInfo = SetStorageInfoFunc
+        };
+
         var settings = new SettingsObject
         {
-            Projects = new HashSet<string>
+            Projects =
+            [
+                Path.Combine(RootDirectory.Parent, "project", "main", ".stbuild",
+                    "PunchingOperationExtensionProject.json")
+            ],
+            ProjectListProps = new ProjectListCommonProps(Logger)
             {
-                Path.Combine(RootDirectory.Parent, "project", "main", ".stbuild", "PunchingOperationExtensionProject.json")
+                SetStorageInfo = SetStorageInfoFunc
             },
-            Variants = new VariantList
-            {
-                new()
+            Variants =
+            [
+                new Variant
                 {
                     Name = "Debug",
                     Configurations = new Dictionary<string, string>
                     {
-                        [BuildSystem.Variants.Variant.NodeConfig] = "Debug"
+                        [BuildSystem.ManagerObject.Interfaces.Variants.Variant.NodeConfig] = "Debug"
                     },
                     Platforms = new Dictionary<string, string>
                     {
-                        [BuildSystem.Variants.Variant.NodePlatform] = "AnyCPU"
+                        [BuildSystem.ManagerObject.Interfaces.Variants.Variant.NodePlatform] = "AnyCPU"
                     }
                 },
-                new()
+
+                new Variant
                 {
                     Name = "Release",
                     Configurations = new Dictionary<string, string>
                     {
-                        [BuildSystem.Variants.Variant.NodeConfig] = "Release"
+                        [BuildSystem.ManagerObject.Interfaces.Variants.Variant.NodeConfig] = "Release"
                     },
                     Platforms = new Dictionary<string, string>
                     {
-                        [BuildSystem.Variants.Variant.NodePlatform] = "AnyCPU"
+                        [BuildSystem.ManagerObject.Interfaces.Variants.Variant.NodePlatform] = "AnyCPU"
                     }
                 }
-            },
-            ManagerProps = new List<IManagerProp>
-            {
+            ],
+            ManagerProps =
+            [
                 new BuilderDotnetProps
                 {
                     Name = "BuilderDotnet"
+                },
+                packageManagerProps,
+                versionManagerProps,
+                new HashGeneratorCommonProps
+                {
+                    Name = "HashGeneratorCommon",
+                    HashAlgorithmType = HashAlgorithmType.Sha256
+                },
+                new ProjectCacheNuGetProps
+                {
+                    Name = "ProjectCacheNuGet",
+                    VersionManagerProps = versionManagerProps,
+                    PackageManagerProps = packageManagerProps,
+                    TempDir = Path.Combine(RootDirectory, "temp")
                 }
-            }
+            ]
         };
+        settings.ManagerNames.Add("hash_generator", "Debug", "HashGeneratorCommon");
+        settings.ManagerNames.Add("hash_generator", "Release", "HashGeneratorCommon");
         settings.ManagerNames.Add("builder", "Debug", "BuilderDotnet");
         settings.ManagerNames.Add("builder", "Release", "BuilderDotnet");
-        
+        settings.ManagerNames.Add("package_manager", "Release", "PackageManagerDotnet");
+        settings.ManagerNames.Add("version_manager", "Release", "VersionManagerCommon");
+        settings.ManagerNames.Add("project_cache", "Release", "ProjectCacheNuGet");
+        settings.ReaderLocalVars = new Dictionary<string, string?>
+        {
+            ["package_namespace"] = "EncySoftware"
+        };
+
         var tempDir = Path.Combine(RootDirectory, "temp");
-        return new BuildSpaceCommon(_logger, tempDir, SettingsReaderType.Object, settings);
+        return new BuildSpaceCommon(Logger, tempDir, SettingsReaderType.Object, settings);
+    }
+    
+    private List<StorageInfo> SetStorageInfoFunc(PackageAction packageAction, string packageId, VersionProp? packageVersion)
+    {
+        // add the main feed anyway
+        var result = new List<StorageInfo>
+        {
+            new()
+            {
+                Url = Environment.GetEnvironmentVariable("NUGET_FEED_URL")
+                      ?? throw new Exception("Environment variable NUGET_FEED_URL is not set"),
+                ApiKey = Environment.GetEnvironmentVariable("NUGET_AUTH_TOKEN") ?? ""
+            }
+        };
+        
+        // for search purposes add other feeds
+        if (packageAction != PackageAction.Push)
+        {
+            result.Add(new StorageInfo
+            {
+                Url = "https://nexus.encycam.com/repository/master/index.json"
+            });
+        }
+        
+        // result
+        return result;
     }
 
     /// <summary>
@@ -126,33 +209,22 @@ public class Build : NukeBuild
     private Target Compile => _ => _
         .Executes(() =>
         {
-            _buildSpace.Projects.Compile(Variant, true);
+            BuildSpace.Projects.Compile(Variant, true);
 
-            // copy xml and settings files, if we want to debug
-            foreach (var project in _buildSpace.Projects)
+            // copy settings file, if we want to debug
+            foreach (var project in BuildSpace.Projects.List.All())
             {
                 var mainProjectFilePath = project.MainFilePath;
                 if (mainProjectFilePath == null)
                     continue;
-                var mainProjectFolder = Path.GetDirectoryName(mainProjectFilePath)
-                                        ?? throw new Exception("Parent folder of main project file path is null");
+
                 var dllPath = project.GetBuildResultPath(Variant, "dll")
                               ?? throw new Exception("Build results with dll type not found");
-                var dllFolder = Path.GetDirectoryName(dllPath)
-                                ?? throw new Exception("Parent folder of dll path is null");
-                
-                // copy settings file
                 var jsonPath = Path.ChangeExtension(mainProjectFilePath, ".settings.json");
                 if (!File.Exists(jsonPath))
                     throw new Exception("Settings file not found");
+
                 File.Copy(jsonPath, Path.ChangeExtension(dllPath, ".settings.json"), true);
-                
-                // copy xml file
-                var sourceXmlPath = Path.Combine(mainProjectFolder, "PunchingOperation_ExtOp.xml");
-                if (!File.Exists(sourceXmlPath))
-                    throw new Exception($"{sourceXmlPath} file not found");
-                var targetXmlPath = Path.Combine(dllFolder, "PunchingOperation_ExtOp.xml");
-                File.Copy(sourceXmlPath, targetXmlPath, true);
             }
         });
 
@@ -163,7 +235,49 @@ public class Build : NukeBuild
     private Target Clean => _ => _
         .Executes(() =>
         {
-            _buildSpace.Projects.Clean(Variant);
+            BuildSpace.Projects.Clean("Debug");
+            BuildSpace.Projects.Clean("Release");
+        });
+        
+    /// <summary>
+    /// Removes all temporary files
+    /// </summary>
+    // ReSharper disable once UnusedMember.Local
+    private Target CleanAll => _ => _
+        .Description("Full clean - removes all temporary files")
+        .DependsOn(Clean)
+        .Executes(() =>
+        {
+            var tempDirectories = new[]
+            {
+                RootDirectory.Parent / "bin",
+                RootDirectory.Parent / "obj",
+                RootDirectory.Parent / "temp",
+                RootDirectory.Parent / ".stbuild" / "temp",
+                RootDirectory.Parent / ".stbuild" / ".nuke" / "temp",
+                RootDirectory.Parent / ".stbuild" / "build" / "bin",
+                RootDirectory.Parent / ".stbuild" / "build" / "obj",
+                RootDirectory.Parent / "project" / "main" / "bin",
+                RootDirectory.Parent / "project" / "main" / "obj"
+            };
+
+            foreach (var dirPath in tempDirectories)
+            {
+                string dir = dirPath.ToString(); 
+                
+                if (Directory.Exists(dir))
+                {
+                    try
+                    {
+                        Directory.Delete(dir, recursive: true);
+                        Logger.head($"✅  Successfully deleted: {dir}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.head($"⚠️  Could not delete {dir}: {ex.Message}");
+                    }
+                }
+            }
         });
 
     /// <summary>
@@ -174,19 +288,14 @@ public class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            foreach (var project in _buildSpace.Projects)
+            foreach (var project in BuildSpace.Projects.List.All())
             {
                 // path to dll (to be included into dext)
                 var dllPath = project.GetBuildResultPath(Variant, "dll")
                               ?? throw new Exception("Build results with dll type not found");
-                var dllFolder = Path.GetDirectoryName(dllPath)
-                                ?? throw new Exception("Parent folder of dll path is null");
 
                 // path to json, describing extension (to be included into dext)
                 var jsonPath = Path.ChangeExtension(dllPath, ".settings.json");
-                
-                // additional files
-                var xmlOperation = Path.Combine(dllFolder, "PunchingOperation_ExtOp.xml");
 
                 // make new dext
                 var outputFolder = Path.GetDirectoryName(dllPath)
@@ -199,8 +308,19 @@ public class Build : NukeBuild
                 using var archive = new ZipArchive(zipToOpen, ZipArchiveMode.Update);
                 archive.CreateEntryFromFile(dllPath, Path.GetFileName(dllPath));
                 archive.CreateEntryFromFile(jsonPath, Path.GetFileName(jsonPath));
-                archive.CreateEntryFromFile(xmlOperation, Path.GetFileName(xmlOperation));
-                _logger.head($"Created dext file: {dextPath}");
+                Logger.head($"Created dext file: {dextPath}");
             }
+        });
+    
+    
+    /// <summary>
+    /// Push packages to the NuGet feed
+    /// </summary>
+    // ReSharper disable once UnusedMember.Local
+    private Target Push => _ => _
+        .DependsOn(Compile)
+        .Executes(() =>
+        {
+            _buildSpace?.Projects.Deploy(Variant);
         });
 }
