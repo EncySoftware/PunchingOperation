@@ -42,13 +42,15 @@ public class OperationEventHandler : ICamApiEventHandler,
     public void InitModelFormers(ICamApiModelFormer modelFormersObj)
     {
         using var modelFormersCom = ComWrapper.Create(modelFormersObj);
-        var modelFormers = modelFormersCom.Instance
-            ?? throw new Exception("Failed to get model formers");
-        
-        if (modelFormers.SupportedItems != null)
+        using var supportedItemsCom = modelFormersCom.InvokeAndWrap(modelFormers => modelFormers.SupportedItems);
+        if (!supportedItemsCom.IsNull)
             return;
-        modelFormers.MakeSupportedItems(new ModelFormerMakeSupportedItems(), out var resultStatus);
-        if (resultStatus.Code == TResultStatusCode.rsError)
-            throw new Exception(resultStatus.Description);
+
+        modelFormersCom.Invoke(modelFormers =>
+        {
+            modelFormers.MakeSupportedItems(new ModelFormerMakeSupportedItems(), out var resultStatus);
+            if (resultStatus.Code == TResultStatusCode.rsError)
+                throw new Exception(resultStatus.Description);
+        });
     }
 }

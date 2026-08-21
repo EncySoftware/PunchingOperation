@@ -1,0 +1,33 @@
+name: Publish to NuGetTest
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./.stbuild
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Push to NuGet
+        shell: pwsh
+        env:
+          NUGET_FEED_URL: https://apiint.nugettest.org/v3/index.json
+          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TEST_AUTH_TOKEN }}
+        run: |
+          ./build.cmd --Target Push --Variant Release
+          
+      - name: Upload Build Logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-logs-report
+          path: ./.stbuild/logs/
+          retention-days: 7
