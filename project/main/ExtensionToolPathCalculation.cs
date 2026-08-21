@@ -374,22 +374,23 @@ public class ExtensionToolPathCalculation :
         
         // get optimal route finder
         using var routeFinderCom = SystemExtensionFactory.CreateExtension<ICamApiRouteVoyager>("Extension.Helper.RouteVoyager");
-        var routeFinder = routeFinderCom.Instance
-            ?? throw new Exception("RouteVoyager container is not initialized");
-        routeFinder.GroupByPlanes = true;
-
-        // fill points
-        foreach (var punchItem in punchItems.Items)
+        routeFinderCom.Invoke(routeFinder =>
         {
-            var firstP = punchItem.Points.First().LCS;
-            routeFinder.AddPoint5D(new T5DPoint(firstP.vT, firstP.vZ));
-        }
+            routeFinder.GroupByPlanes = true;
 
-        // calc and return result
-        var getOptimalRouteCallback = new RouteVoyagerGetOptimalRouteCallback(punchItems);
-        routeFinder.GetOptimalRoute(getOptimalRouteCallback, out var ret);
-        if (ret.Code == TResultStatusCode.rsError)
-            throw new Exception("Error getting optimal route: " + ret.Description);
+            // fill points
+            foreach (var punchItem in punchItems.Items)
+            {
+                var firstP = punchItem.Points.First().LCS;
+                routeFinder.AddPoint5D(new T5DPoint(firstP.vT, firstP.vZ));
+            }
+
+            // calc and return result
+            var getOptimalRouteCallback = new RouteVoyagerGetOptimalRouteCallback(punchItems);
+            routeFinder.GetOptimalRoute(getOptimalRouteCallback, out var ret);
+            if (ret.Code == TResultStatusCode.rsError)
+                throw new Exception("Error getting optimal route: " + ret.Description);
+        });
     }
 
     private void OptimizeRotation(ICamApiTechOperation techOperation, PunchItems punchItems)
