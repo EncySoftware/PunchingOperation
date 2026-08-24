@@ -15,8 +15,9 @@ using BuildSystem.ManagerObject.Interfaces;
 using BuildSystem.ManagerObject.Interfaces.Package;
 using BuildSystem.ManagerObject.Interfaces.Variants;
 using BuildSystem.ProjectList;
-using Loggers;
+using BuildSystem.ProjectList.Model;
 using Logging;
+using Utils;
 using Nuke.Common.Utilities.Collections;
 using LogLevel = Logging.LogLevel;
 
@@ -77,129 +78,10 @@ public class Build : NukeBuild
     private IBuildSpace InitBuildSpace()
     {
         BuildInfo.RunParams[RunInfo.Variant] = Variant;
-        var gitBranch = GitBranch;
-
-        var versionManagerProps = new VersionManagerCommonProps
-        {
-            Name = "VersionManagerCommon",
-            DepthSearch = 2,
-            DevelopBranchName = gitBranch.EndsWith("develop", StringComparison.OrdinalIgnoreCase)
-                ? gitBranch
-                : "develop",
-            MasterBranchName = gitBranch.EndsWith("main", StringComparison.OrdinalIgnoreCase)
-                ? gitBranch
-                : "main",
-            ReleaseBranchName = gitBranch.EndsWith("release", StringComparison.OrdinalIgnoreCase)
-                ? gitBranch
-                : "release"
-        };
-        var packageManagerProps = new PackageManagerDotnetProps
-        {
-            Name = "PackageManagerDotnet",
-            SetStorageInfo = SetStorageInfoFunc
-        };
-
-        var settings = new SettingsObject
-        {
-            Projects =
-            [
-                Path.Combine(RootDirectory.Parent, "project", "main", ".stbuild",
-                    "PunchingOperationExtensionProject.json")
-            ],
-            ProjectListProps = new ProjectListCommonProps(Logger)
-            {
-                SetStorageInfo = SetStorageInfoFunc
-            },
-            Variants =
-            [
-                new Variant
-                {
-                    Name = "Debug",
-                    Configurations = new Dictionary<string, string>
-                    {
-                        [BuildSystem.ManagerObject.Interfaces.Variants.Variant.NodeConfig] = "Debug"
-                    },
-                    Platforms = new Dictionary<string, string>
-                    {
-                        [BuildSystem.ManagerObject.Interfaces.Variants.Variant.NodePlatform] = "AnyCPU"
-                    }
-                },
-
-                new Variant
-                {
-                    Name = "Release",
-                    Configurations = new Dictionary<string, string>
-                    {
-                        [BuildSystem.ManagerObject.Interfaces.Variants.Variant.NodeConfig] = "Release"
-                    },
-                    Platforms = new Dictionary<string, string>
-                    {
-                        [BuildSystem.ManagerObject.Interfaces.Variants.Variant.NodePlatform] = "AnyCPU"
-                    }
-                }
-            ],
-            ManagerProps =
-            [
-                new BuilderDotnetProps
-                {
-                    Name = "BuilderDotnet"
-                },
-                packageManagerProps,
-                versionManagerProps,
-                new HashGeneratorCommonProps
-                {
-                    Name = "HashGeneratorCommon",
-                    HashAlgorithmType = HashAlgorithmType.Sha256
-                },
-                new ProjectCacheNuGetProps
-                {
-                    Name = "ProjectCacheNuGet",
-                    VersionManagerProps = versionManagerProps,
-                    PackageManagerProps = packageManagerProps,
-                    TempDir = Path.Combine(RootDirectory, "temp")
-                }
-            ]
-        };
-        settings.ManagerNames.Add("hash_generator", "Debug", "HashGeneratorCommon");
-        settings.ManagerNames.Add("hash_generator", "Release", "HashGeneratorCommon");
-        settings.ManagerNames.Add("builder", "Debug", "BuilderDotnet");
-        settings.ManagerNames.Add("builder", "Release", "BuilderDotnet");
-        settings.ManagerNames.Add("package_manager", "Release", "PackageManagerDotnet");
-        settings.ManagerNames.Add("version_manager", "Release", "VersionManagerCommon");
-        settings.ManagerNames.Add("project_cache", "Release", "ProjectCacheNuGet");
-        settings.ReaderLocalVars = new Dictionary<string, string?>
-        {
-            ["package_namespace"] = "EncySoftware"
-        };
-
+        BuildInfo.RunParams[RunInfo.Local] = "local";
+        var settings = new BuildSpaceSettings(Logger, RootDirectory.Parent, GitBranch);
         var tempDir = Path.Combine(RootDirectory, "temp");
         return new BuildSpaceCommon(Logger, tempDir, SettingsReaderType.Object, settings);
-    }
-    
-    private List<StorageInfo> SetStorageInfoFunc(PackageAction packageAction, string packageId, VersionProp? packageVersion)
-    {
-        // add the main feed anyway
-        var result = new List<StorageInfo>
-        {
-            new()
-            {
-                Url = Environment.GetEnvironmentVariable("NUGET_FEED_URL")
-                      ?? throw new Exception("Environment variable NUGET_FEED_URL is not set"),
-                ApiKey = Environment.GetEnvironmentVariable("NUGET_AUTH_TOKEN") ?? ""
-            }
-        };
-        
-        // for search purposes add other feeds
-        if (packageAction != PackageAction.Push)
-        {
-            result.Add(new StorageInfo
-            {
-                Url = "https://nexus.encycam.com/repository/master/index.json"
-            });
-        }
-        
-        // result
-        return result;
     }
 
     /// <summary>
